@@ -447,21 +447,36 @@ def mark_crosswalk(diagonal: bool = False) -> list[str]:
     return out
 
 
-def mark_arrows_lane(n: int = 3) -> list[str]:
-    """路面の進行方向別通行区分。矢印を 64 の座標系で直接描く（縮小すると潰れる）。"""
-    def a(x: float, kind: str) -> str:
-        if kind == "up":
-            return (f'<path d="M{x} 50 L{x} 22 M{x - 7} 30 L{x} 20 L{x + 7} 30" '
-                    f'fill="none" stroke="{WHITE}" stroke-width="4.5" '
-                    f'stroke-linecap="round" stroke-linejoin="round"/>')
-        d = -1 if kind == "left" else 1
-        return (f'<path d="M{x} 50 L{x} 32 L{x + 8 * d} 32 M{x + 2 * d} 26 '
-                f'L{x + 10 * d} 32 L{x + 2 * d} 38" fill="none" stroke="{WHITE}" '
-                f'stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>')
-    if n == 1:
-        return [a(32, "up")]
-    # 左右の矢印は路面(3〜61)の中に収める
-    return [a(19, "left"), a(32, "up"), a(45, "right")]
+def mark_arrow_fan(dirs: tuple[str, ...] = ("left", "up", "right"),
+                   narrow: bool = False) -> list[str]:
+    """路面の進行方向の矢印。塗りで描き、外側の2本は傾ける。
+
+    実物は L 字の矢印だが、20px では折れ目が潰れて読めない。根元から扇状に
+    傾けた直線の矢印にすると、小さくても向きが分かる。
+
+    narrow は通行帯の線と併せるとき用。線の間（各車線）に収まるよう、
+    間隔を広げて傾きを浅くする。
+    """
+    H, W, T = (16, 9, 2.4) if narrow else (18, 10, 2.6)
+
+    def arrow(cx: float, base: float, deg: float) -> str:
+        body = (
+            f'<path d="M{-T} 0 L{-T} {-H + 7} L{-W / 2} {-H + 7} L0 {-H} '
+            f'L{W / 2} {-H + 7} L{T} {-H + 7} L{T} 0 Z" fill="{WHITE}"/>'
+        )
+        return f'<g transform="translate({cx} {base}) rotate({deg})">{body}</g>'
+
+    if narrow:
+        lay = {("left", "up", "right"): [(12, -14), (32, 0), (52, 14)]}.get(tuple(dirs))
+    else:
+        lay = {
+            ("up",): [(32, 0)],
+            ("left", "right"): [(21, -32), (43, 32)],
+            ("left", "up", "right"): [(17, -28), (32, 0), (47, 28)],
+        }.get(tuple(dirs))
+    if lay is None:
+        raise ValueError(f"未対応の組み合わせ: {dirs}")
+    return [arrow(cx, 52, deg) for cx, deg in lay]
 
 
 def mark_roadside() -> list[str]:
