@@ -520,3 +520,101 @@ def svg(parts: list[str], clip: bool = False) -> str:
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{SIZE}" height="{SIZE}" '
         f'viewBox="0 0 {SIZE} {SIZE}">{defs}{body}</svg>'
     )
+
+# ---- 実物の道路標示にもとづく部品 -----------------------------------------
+# 別表第六の図（e-Gov の法令データ）を見て形を決めている。
+# **道路標示に赤は使わない。** 白（一部黄）だけで描く。
+
+
+def mark_arrow_l(dirs: tuple[str, ...] = ("left", "up", "right")) -> list[str]:
+    """進行方向別通行区分（標示110）。実物どおり、軸に「かえし」が付いたL字の矢印。"""
+    def shaft(cx: float, barb: int) -> str:
+        # 軸（下から上へ）＋先端の三角＋根元寄りの横向きのかえし
+        out = [f'<path d="M{cx - 2.6} 52 L{cx - 2.6} 26 L{cx - 6} 26 L{cx} 18 '
+               f'L{cx + 6} 26 L{cx + 2.6} 26 L{cx + 2.6} 52 Z" fill="{WHITE}"/>']
+        if barb:
+            d = barb  # -1 で左、+1 で右
+            x0 = cx + 2.6 * d
+            out.append(
+                f'<path d="M{x0} 36 L{x0 + 6 * d} 36 L{x0 + 6 * d} 32.5 '
+                f'L{x0 + 11 * d} 38.5 L{x0 + 6 * d} 44.5 L{x0 + 6 * d} 41 '
+                f'L{x0} 41 Z" fill="{WHITE}"/>'
+            )
+        return out
+
+    lay = {("up",): [(32, 0)],
+           ("left", "right"): [(22, -1), (42, 1)],
+           ("left", "up", "right"): [(18, -1), (32, 0), (46, 1)]}.get(tuple(dirs))
+    if lay is None:
+        raise ValueError(f"未対応の組み合わせ: {dirs}")
+    return [part for cx, barb in lay for part in shaft(cx, barb)]
+
+
+def mark_turn_path() -> list[str]:
+    """右左折の方法（標示111）。交差点内を曲がる軌跡の矢印。"""
+    return [
+        # 左へ曲がる軌跡
+        f'<path d="M20 56 L20 34 C20 28 24 24 30 24 L34 24 L34 16 L46 27 L34 38 '
+        f'L34 31 L31 31 C29 31 28 32 28 34 L28 56 Z" fill="{WHITE}"/>',
+        # 交差点であることを示す横の道
+        f'<path d="M4 20 L58 20" stroke="{WHITE}" stroke-width="3" '
+        f'stroke-dasharray="5 4"/>',
+    ]
+
+
+def mark_keepout() -> list[str]:
+    """立入り禁止部分（標示106）。角丸の輪郭の中を斜縞で埋める。"""
+    out = [f'<defs><clipPath id="k"><rect x="14" y="8" width="36" height="48" rx="18"/>'
+           f'</clipPath></defs>']
+    for i in range(-2, 6):
+        x = 8 + i * 9
+        out.append(f'<line x1="{x}" y1="58" x2="{x + 22}" y2="6" stroke="{WHITE}" '
+                   f'stroke-width="4" clip-path="url(#k)"/>')
+    out.append(f'<rect x="14" y="8" width="36" height="48" rx="18" fill="none" '
+               f'stroke="{WHITE}" stroke-width="3.5"/>')
+    return out
+
+
+def mark_no_stop_area() -> list[str]:
+    """停止禁止部分（標示107）。枠の内側に短い斜線を並べる。"""
+    out = [f'<rect x="11" y="11" width="42" height="42" fill="none" stroke="{WHITE}" '
+           f'stroke-width="3.5"/>']
+    for i in range(4):
+        y = 17 + i * 10
+        out.append(f'<line x1="13" y1="{y + 6}" x2="21" y2="{y}" stroke="{WHITE}" '
+                   f'stroke-width="3"/>')
+        out.append(f'<line x1="43" y1="{y + 6}" x2="51" y2="{y}" stroke="{WHITE}" '
+                   f'stroke-width="3"/>')
+    return out
+
+
+def mark_diagonal_crossing() -> list[str]:
+    """斜め横断可（標示201の2）。交差点の四隅を斜めに横断する縞。"""
+    bands = []
+    for deg in (45, -45):
+        for i in range(-1, 2):
+            # 帯は中心(32)を軸に等間隔で並べる
+            bands.append(
+                f'<g transform="rotate({deg} 32 32)">'
+                f'<rect x="{29.5 + i * 11}" y="2" width="5" height="60" fill="{WHITE}"/></g>'
+            )
+    # クリップは回転していない外側の g に掛ける（内側に掛けるとクリップも回る）
+    return [f'<g clip-path="url(#c)">{"".join(bands)}</g>']
+
+
+def mark_tram_stop() -> list[str]:
+    """路面電車停留場（標示209）。軌道の脇に細長い島を置く。"""
+    return [
+        f'<line x1="44" y1="4" x2="44" y2="60" stroke="{WHITE}" stroke-width="3"/>',
+        f'<line x1="54" y1="4" x2="54" y2="60" stroke="{WHITE}" stroke-width="3"/>',
+        f'<path d="M18 12 L34 12 L34 44 L26 56 L18 56 Z" fill="none" stroke="{WHITE}" '
+        f'stroke-width="3.5"/>',
+    ]
+
+
+def mark_bike_entry_bar() -> list[str]:
+    """普通自転車の交差点進入禁止（標示114の4）。自転車と進入を塞ぐ横棒。"""
+    return [
+        f'<g transform="translate(10 26) scale(0.34)">{picto_bike()}</g>',
+        f'<rect x="12" y="16" width="40" height="6" rx="1" fill="{WHITE}"/>',
+    ]

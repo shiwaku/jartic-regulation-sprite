@@ -45,9 +45,9 @@ def main() -> None:
         "「出所」が標識の図案のものは、**標識令別表第二で定められた図案**を 64×64 に",
         "正規化して使っています（`signs/`）。SVGファイル自体は政府配布ではなく、",
         "Wikimedia Commons の利用者が図案を再現したもの（`PD-Japan-exempt`）です。",
-        "「独自作図（SVG無し）」は別表第二に標識があるが Commons に SVG が無いもの、",
-        "「独自作図（標識なし）」は道路標示などで規定され標識が無いものです。",
-        "根拠は [`../data/handdrawn_reasons.csv`](../data/handdrawn_reasons.csv)。詳しくは",
+        "独自作図のものは、別表第六（道路標示）の図を e-Gov で確認して形を決めています。",
+        "「参考」の列がその標示番号です。根拠は",
+        "[`../data/handdrawn_reasons.csv`](../data/handdrawn_reasons.csv)。詳しくは",
         "[design-spec.md](design-spec.md)。",
         "",
     ]
@@ -71,13 +71,13 @@ def main() -> None:
             desc = o["note"] or "標識令別表第二で定められた図案をそのまま使う"
         else:
             rs = reasons.get(code, {})
-            if rs.get("reason") == "no_svg":
-                src = "独自作図（SVG無し）"
-                ref = rs.get("sign_no", "")
-            else:
-                src = "独自作図（標識なし）"
-                ref = "－"
+            src = "独自作図"
+            ref = rs.get("basis") or "－"
+            if rs.get("figure_checked") == "yes":
+                src = "独自作図（実物の図を見て作成）"
             _r, desc, _parts = DESIGNS[code]
+            if rs.get("note"):
+                desc = rs["note"]
         cells = [f"`{code}`", r["name"], src, ref, desc]
         if counts:
             n = counts.get(code)

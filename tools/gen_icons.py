@@ -23,8 +23,9 @@ from icons_lib import (  # noqa: E402
     arrow, arrow_ring, arrow_turn, arrow_uturn, arrows_lane, arrows_pass,
     arrows_two_step, bar_h, blue_circle, blue_circle_red_ring, blue_pentagon,
     blue_rect, blue_square, centered, cross, disc, mark_box_cross, mark_crosswalk,
-    mark_arrow_fan, mark_line, mark_lines, mark_parking_bay, mark_platform,
-    mark_roadside,
+    mark_arrow_fan, mark_arrow_l, mark_bike_entry_bar, mark_diagonal_crossing,
+    mark_keepout, mark_line, mark_lines, mark_no_stop_area, mark_parking_bay,
+    mark_roadside, mark_tram_stop, mark_turn_path,
     mark_shift, mark_stopline, mark_zebra, picto_ahead_priority, picto_bike,
     picto_bus, picto_car, picto_cart, picto_clock, picto_clover, picto_height,
     picto_horn, picto_moto, picto_p, picto_ped, picto_ped_child,
@@ -115,15 +116,15 @@ DESIGNS: dict[str, tuple[str, str, list[str]]] = {
               f'<rect x="34" y="46" width="5" height="8" fill="{BLUE}"/>'
               f'<rect x="44" y="46" width="5" height="8" fill="{BLUE}"/></g>',
               slash()]),
-    "19": ("路面標示", "白枠の中に斜縞（立入り禁止部分）", marking(mark_zebra(frame=True))),
-    "76": ("路面標示", "白枠に×（停止禁止部分）", marking(mark_box_cross())),
+    "19": ("標示106", "角丸の輪郭の中を斜縞で埋める（立入り禁止部分）", marking(mark_keepout())),
+    "76": ("標示107", "枠の内側に短い斜線を並べる（停止禁止部分）", marking(mark_no_stop_area())),
     "90": ("路面標示", "斜縞（導流帯）", marking(mark_zebra())),
 
     # ---- 一方通行・方向 ----
     "11": ("326-A", "横長の青地に白の矢印（一方通行）",
            blue_rect() + [place(arrow("right"), 12, 12, 0.4)]),
     "12": ("311", "青地に白の直進矢印（指定方向外進行禁止）", designate(arrow("up"), 0.34)),
-    "60": ("路面標示", "路面に白の矢印（進行方向）", marking(mark_arrow_fan(("up",)))),
+    "60": ("標示204", "路面に白の矢印（進行方向）", marking(mark_arrow_l(("up",)))),
     "50": ("312", "右折矢印に赤の斜線（車両横断禁止）", prohibit(arrow_turn("right", BLUE), scale=0.40)),
     "51": ("313", "転回矢印に赤の斜線（転回禁止）", prohibit(arrow_uturn(BLUE), scale=0.40)),
     "53": ("314", "2本の矢印に赤の斜線（追越し禁止）", prohibit(arrows_pass(BLUE), scale=0.42)),
@@ -131,10 +132,10 @@ DESIGNS: dict[str, tuple[str, str, list[str]]] = {
            designate(arrows_two_step(), 0.34)),
     "56": ("327の9", "白地・赤縁に右折矢印（原付の右折方法・小回り）",
            [disc(WHITE), ring(RED), centered(arrow_turn("right", BLUE), 0.34)]),
-    "57": ("路面標示", "路面に左折と右折の矢印（右左折の方法）",
-           marking(mark_arrow_fan(("left", "right")))),
-    "58": ("路面標示", "路面に左折・直進・右折の矢印（進行方向別通行区分）",
-           marking(mark_arrow_fan())),
+    "57": ("標示111", "交差点内を曲がる軌跡の矢印（右左折の方法）",
+           marking(mark_turn_path())),
+    "58": ("標示110", "軸にかえしが付いたL字の矢印（進行方向別通行区分）",
+           marking(mark_arrow_l())),
     "94": ("路面標示", "青地に左向きの矢印（左折可）",
            blue_square() + [place(arrow("left"), 12, 12, 0.4)]),
     "106": ("327の10", "青地に右回りの環状矢印（環状交差点における右回り通行）",
@@ -157,8 +158,11 @@ DESIGNS: dict[str, tuple[str, str, list[str]]] = {
     # ---- 一時停止・信号 ----
     "63": ("330", "赤地の逆三角形（一時停止）", tri_down(RED, WHITE, 4)),
     "98": ("信号機", "3灯の信号機", [centered(picto_signal(), 0.8)]),
-    "92": ("路面標示", "路面に太い白線（停止線）", marking(mark_stopline(1))),
-    "93": ("路面標示", "路面に白線2本（二段停止線）", marking(mark_stopline(2))),
+    "92": ("標示203", "路面に太い白線1本（停止線）",
+           marking([f'<rect x="9" y="34" width="46" height="8" rx="1" fill="{WHITE}"/>'])),
+    "93": ("標示203の2", "路面に白線2本（二段停止線）",
+           marking([f'<rect x="9" y="24" width="46" height="7" rx="1" fill="{WHITE}"/>',
+                    f'<rect x="9" y="42" width="46" height="7" rx="1" fill="{WHITE}"/>'])),
 
     # ---- 駐車・停車 ----
     "65": ("315", "青地・赤縁に赤の×（駐停車禁止）", no_parking(cross())),
@@ -186,10 +190,12 @@ DESIGNS: dict[str, tuple[str, str, list[str]]] = {
     "117": ("路面標示", "路面の端に白線（路側帯）", marking(mark_roadside())),
 
     # ---- 通行帯・中央線 ----
-    "15": ("路面標示", "路面に黄の中央線", marking([mark_line(YELLOW)])),
-    "16": ("路面標示", "折れた黄の中央線（中央線の変移）", marking(mark_shift())),
-    "17": ("路面標示", "黄の実線（追越しのための右側部分はみ出し通行禁止）",
-           marking([mark_line(YELLOW), mark_line(YELLOW, x=38)])),
+    "15": ("標示205", "路面に白の中央線", marking([mark_line(WHITE, dashed=False)])),
+    "16": ("標示205", "折れた白の中央線（中央線の変移）",
+           marking([f'<path d="M24 6 L24 24 L40 34 L40 58" fill="none" stroke="{WHITE}" '
+                    f'stroke-width="5"/>'])),
+    "17": ("標示102", "中央に黄の実線1本（追越しのための右側部分はみ出し通行禁止）",
+           marking([mark_line(YELLOW, dashed=False)])),
     "20": ("路面標示", "路面に白の破線2本（車両通行帯）", marking(mark_lines([22, 42]))),
     "21": ("路面標示", "通行帯の線と自動車（車両通行区分＝車種で分ける）",
            marking(mark_lines([16, 48]), [f'<g transform="translate(10 16) scale(0.42)">'
@@ -197,10 +203,9 @@ DESIGNS: dict[str, tuple[str, str, list[str]]] = {
     "24": ("路面標示", "通行帯にバス（路線バス等優先通行帯）",
            marking(mark_lines([16, 48]), [f'<g transform="translate(14 18) scale(0.34)">'
                                           f'{picto_bus()}</g>'])),
-    "52": ("路面標示", "白の実線をまたぐ矢印に赤の斜線（進路変更禁止）",
-           marking([mark_line(WHITE, dashed=False)],
-                   [f'<g transform="translate(4 14) scale(0.46)">{arrow("right")}</g>'],
-                   [slash()])),
+    "52": ("標示102の2", "車線境界に黄の実線（進路変更禁止。道路標示に赤は使わない）",
+           marking([mark_line(YELLOW, dashed=False, x=22),
+                    mark_line(YELLOW, dashed=False, x=42)])),
     "107": ("路面標示", "通行帯の線と自動車と直進の矢印（車両通行帯及び車両通行区分）",
             marking(mark_lines([16, 48]),
                     [f'<g transform="translate(11 4) scale(0.3)">{picto_car()}</g>'],
@@ -213,10 +218,10 @@ DESIGNS: dict[str, tuple[str, str, list[str]]] = {
             marking(mark_lines([16, 48], dashed=False),
                     [f'<g transform="translate(10 16) scale(0.42)">{picto_bus()}</g>'])),
     "118": ("路面標示", "通行帯の線と矢印（車両通行帯及び進行方向別通行区分）",
-            marking(mark_lines([22, 42]), mark_arrow_fan(narrow=True))),
+            marking(mark_lines([22, 42]), mark_arrow_l())),
     "119": ("路面標示", "白の実線と矢印（通行帯・進行方向別通行区分・進路変更禁止）",
             marking([mark_line(WHITE, dashed=False, x=22), mark_line(WHITE, dashed=False, x=42)],
-                    mark_arrow_fan(narrow=True))),
+                    mark_arrow_l())),
 
     # ---- 自転車・歩行者 ----
     "81": ("325の3", "青の円に自転車と歩道の線（普通自転車歩道通行可）",
@@ -226,8 +231,8 @@ DESIGNS: dict[str, tuple[str, str, list[str]]] = {
     "82": ("路面標示", "路面に自転車と区分線（普通自転車の歩道通行部分）",
            marking([mark_line(WHITE, dashed=False, x=44)],
                    [f'<g transform="translate(2 20) scale(0.3)">{picto_bike()}</g>'])),
-    "83": ("路面標示", "自転車に赤の斜線（普通自転車の交差点進入禁止）",
-           blue_square() + [place(picto_bike(), 8, 16, 0.3)] + [slash()]),
+    "83": ("標示114の4", "自転車と進入を塞ぐ横棒（普通自転車の交差点進入禁止）",
+           marking(mark_bike_entry_bar())),
     "84": ("401", "青の四角に自転車2台（並進可）",
            blue_square() + [place(picto_bike(), 4, 12, 0.24), place(picto_bike(), 30, 30, 0.24)]),
     "85": ("407", "青の五角形に歩行者と横断の縞（横断歩道）",
@@ -238,14 +243,15 @@ DESIGNS: dict[str, tuple[str, str, list[str]]] = {
                               f'fill="{WHITE}"/><rect x="38" y="48" width="4" height="8" '
                               f'fill="{WHITE}"/><rect x="46" y="48" width="4" height="8" '
                               f'fill="{WHITE}"/></g>']),
-    "86": ("路面標示", "斜めの横断の縞（斜め横断可）", marking(mark_crosswalk(diagonal=True))),
+    "86": ("標示201の2", "交差点の四隅を斜めに横断する縞（斜め横断可）",
+           marking(mark_diagonal_crossing())),
     "87": ("407の2", "青の五角形に自転車（自転車横断帯）",
            blue_pentagon() + [place(picto_bike(), 8, 14, 0.3)]),
     "27": ("402", "青の四角に自動車と軌道（軌道敷内通行可）",
            blue_square() + [place(picto_car(), 8, 12, 0.28),
                             f'<line x1="10" y1="48" x2="54" y2="48" stroke="{WHITE}" '
                             f'stroke-width="4"/>']),
-    "91": ("路面標示", "路面電車とホーム（路面電車停留場）", marking(mark_platform())),
+    "91": ("標示209", "軌道の脇に細長い島（路面電車停留場）", marking(mark_tram_stop())),
 
     # ---- 優先・その他 ----
     "54": ("405", "青の四角に太い縦の道（優先道路）",
