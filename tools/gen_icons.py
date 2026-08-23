@@ -32,7 +32,7 @@ from icons_lib import (  # noqa: E402
     picto_weight, place, road, ring, slash, svg, tri_down, white_square_red_border,
 )
 
-from import_official import import_official, refs  # noqa: E402
+from import_signs import import_signs, refs  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 ICONS = ROOT / "icons"
@@ -274,20 +274,20 @@ def main() -> None:
     for stale in ICONS.glob("*.svg"):
         stale.unlink()
 
-    # 対応する道路標識があるものは公式意匠を使う。DESIGNS の定義より優先する。
-    official = import_official()
+    # 対応する道路標識があるものは、その図案(signs/)を使う。DESIGNS より優先する。
+    from_signs = import_signs()
 
-    hand = [c for c in sorted(DESIGNS, key=int) if c not in official]
+    hand = [c for c in sorted(DESIGNS, key=int) if c not in from_signs]
     for code in hand:
         _ref, _desc, parts = DESIGNS[code]
         # 斜縞は路面の外にはみ出すのでクリップを付ける
         needs_clip = 'clip-path="url(#c)"' in "".join(parts)
         (ICONS / f"{code}.svg").write_text(svg(parts, clip=needs_clip), encoding="utf-8")
 
-    made = official | set(hand)
+    made = from_signs | set(hand)
     if made != valid:
         raise SystemExit(f"作れていないコード: {sorted(valid - made, key=int)}")
-    print(f"アイコン {len(made)} 個: 公式意匠 {len(official)} / 自作 {len(hand)}")
+    print(f"アイコン {len(made)} 個: 標識の図案 {len(from_signs)} / 自作 {len(hand)}")
     print(f"自作のコード: {' '.join(hand)}")
 
 

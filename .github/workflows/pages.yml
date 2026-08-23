@@ -43,7 +43,7 @@ jobs:
       - name: 整合を確かめる
         run: python tools/verify_icons.py
 
-      - name: 公式意匠と一致しているか確かめる
+      - name: 標識令の図案と一致しているか確かめる
         run: npm run compare -- --strict
 
       - name: 一覧を生成し直して差分が無いか見る

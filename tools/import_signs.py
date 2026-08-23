@@ -19,9 +19,9 @@ import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-OFFICIAL = ROOT / "official"
+SIGNS = ROOT / "signs"
 ICONS = ROOT / "icons"
-REFS = ROOT / "data" / "official_refs.csv"
+REFS = ROOT / "data" / "sign_refs.csv"
 SIZE = 64
 COMMONS = "https://commons.wikimedia.org/wiki/File:Japan_road_sign_{}.svg"
 
@@ -63,13 +63,13 @@ def normalize(svg: str, source: str) -> str:
     return f"{note}\n{new_tag}{body}"
 
 
-def import_official() -> set[str]:
+def import_signs() -> set[str]:
     """icons/ に書き出したコードを返す。"""
     ICONS.mkdir(exist_ok=True)
     done: set[str] = set()
     for r in refs():
         code, name = r["code"], r["commons_file"]
-        src = OFFICIAL / f"{name}.svg"
+        src = SIGNS / f"{name}.svg"
         if not src.exists():
             raise SystemExit(f"{src} が無い。data/official_refs.csv と official/ が合っていない。")
         svg = src.read_text(encoding="utf-8")
@@ -85,5 +85,5 @@ def import_official() -> set[str]:
 
 
 if __name__ == "__main__":
-    codes = import_official()
+    codes = import_signs()
     print(f"公式意匠から {len(codes)} 個のアイコンを作った")

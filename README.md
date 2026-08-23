@@ -78,27 +78,36 @@ map.addLayer({
 
 ## アイコンの出所
 
-**対応する道路標識があるものは、公式意匠をそのまま使っています。** 地図の上で
-「見慣れた標識」であることを優先しました。
+**対応する道路標識があるものは、標識令で定められた図案をそのまま使っています。**
+地図の上で「見慣れた標識」であることを優先しました。
 
 | 出所 | 数 | 内容 |
 |---|---|---|
-| 公式意匠 | 43 | 標識令別表第二にもとづく標識SVGを 64×64 に正規化（`official/`） |
-| 自作 | 30 | 対応する道路標識が無いもの（路面標示・信号機など） |
+| 標識令の図案 | 43 | 「道路標識、区画線及び道路標示に関する命令」別表第二の図案（`signs/`）を 64×64 に正規化 |
+| 独自作図 | 30 | 対応する道路標識が無いもの（路面標示・信号機など） |
 
-公式意匠のSVGは文字がすでにパス化されているので、`止まれ`・`50`・`3.3m`・`通行止`
+**「公式」という言い方は避けています。** 公式なのは*図案*（法令で定められたもの）で、
+`signs/` に置いた **SVGファイル自体は政府配布ではありません**。
+[Wikimedia Commons の道路標識SVG](https://commons.wikimedia.org/wiki/Road_signs_in_Japan)
+（利用者が図案を再現したもの、`PD-Japan-exempt`）を取り込んでいます。
+
+政府が配布している図そのものは
+[e-Gov 法令検索の標識令](https://laws.e-gov.go.jp/law/335M50004002003)
+にありますが、別表第二の図は **JPEG のラスタ画像**（`pict/S35F03102010003-*.jpg`）で
+提供されているため、地図アイコンには使えません。だから再現SVGを使っています。
+
+図案のSVGは文字がすでにパス化されているので、`止まれ`・`50`・`3.3m`・`通行止`
 といった文字もそのまま入り、ラスタライズ時にフォントを必要としません。
 取り込みは `width` / `height` を 64 にするだけで、**パスには手を入れません**。
 
 出所はコードごとに [`docs/icon-list.md`](docs/icon-list.md) の「出所」列と
-[`data/official_refs.csv`](data/official_refs.csv) で辿れます。
-意匠の考え方と、小さくしたときに読みにくいものは
-[`docs/design-spec.md`](docs/design-spec.md)。
+[`data/sign_refs.csv`](data/sign_refs.csv) で辿れます。意匠の考え方と、
+小さくしたときに読みにくいものは [`docs/design-spec.md`](docs/design-spec.md)。
 
 ### 取り込みが崩れていないか確かめる
 
 ```bash
-npm run compare              # icons/ と official/ を並べ、色の構成を比べる
+npm run compare              # icons/ と signs/ を並べ、色の構成を比べる
 npm run compare -- --strict  # ずれていたら異常終了する
 ```
 
@@ -108,9 +117,9 @@ npm run compare -- --strict  # ずれていたら異常終了する
 
 ```bash
 npm install
-npm run icons     # official/ の取り込み＋自作分の生成で icons/*.svg を作る
+npm run icons     # signs/ の取り込み＋独自作図分の生成で icons/*.svg を作る
 npm run verify    # コード表・SVG・スプライトの整合を見る
-npm run compare   # 公式意匠と並べて突き合わせる
+npm run compare   # 標識令の図案と並べて突き合わせる
 npm run docs      # docs/icon-list.md を作り直す
 npm run build     # _site/sprite{,@2x}.{png,json} を作る
 npm start         # ビルドしてローカルで配信（http://localhost:8080）
@@ -119,7 +128,7 @@ npm start         # ビルドしてローカルで配信（http://localhost:8080
 依存は Python 3.12 標準ライブラリと [@unvt/sprite-one](https://github.com/unvt/sprite-one) だけです。
 `icons/*.svg` は生成物ですがリポジトリに入れています（差分が見えるように）。
 CI は `npm run icons` を回して**コミットされた SVG と生成結果が一致するか**を確かめ、
-`npm run compare -- --strict` で公式意匠との一致も見ます。
+`npm run compare -- --strict` で標識令の図案との一致も見ます。
 
 実データでの件数を一覧に載せるには、変換器のリポジトリを隣に置いて次を実行します。
 
@@ -139,13 +148,13 @@ python tools/pull_counts.py   # ../jartic-traffic-regulation-converter/data/pars
 
 ## ライセンス
 
-**ツール類・自作アイコン**: MIT License（[LICENSE](LICENSE)）。
+**ツール類・独自作図のアイコン**: MIT License（[LICENSE](LICENSE)）。
 
-**公式意匠のアイコン（`official/` とそれに由来する `icons/*.svg`）**: 著作権の対象外。
-道路標識の図案は「道路標識、区画線及び道路標示に関する命令」別表第二で定められた
-法令の図案であり、著作権法13条により著作権の対象になりません。ファイルは
-[Wikimedia Commons の道路標識SVG](https://commons.wikimedia.org/wiki/Road_signs_in_Japan)
-（`PD-Japan-exempt`）から取り込んでおり、各ファイルの先頭に取得元をコメントで
-書いています。対応表は [`data/official_refs.csv`](data/official_refs.csv)。
+**標識令の図案にもとづくアイコン（`signs/` とそれに由来する `icons/*.svg`）**:
+著作権の対象外。道路標識の図案は「道路標識、区画線及び道路標示に関する命令」別表第二で
+定められた法令の図案であり、著作権法13条により著作権の対象になりません。
+ファイルは [Wikimedia Commons](https://commons.wikimedia.org/wiki/Road_signs_in_Japan)
+（`PD-Japan-exempt`）から取り込んだ再現SVGで、各アイコンの先頭に取得元をコメントで
+書いています。対応表は [`data/sign_refs.csv`](data/sign_refs.csv)。
 
 生成物のスプライト（`sprite.png` / `sprite.json`）は両方を含みます。

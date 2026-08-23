@@ -21,7 +21,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
 from gen_icons import DESIGNS  # noqa: E402
-from import_official import refs as official_refs  # noqa: E402
+from import_signs import refs as sign_refs  # noqa: E402
 
 SITE = ROOT / "_site"
 ICONS = ROOT / "icons"
@@ -100,11 +100,11 @@ def main() -> None:
 
     sprite = json.loads((SITE / "sprite.json").read_text(encoding="utf-8"))
 
-    official = {r["code"] for r in official_refs()}
+    signs = {r["code"] for r in sign_refs()}
     items = []
     for r in valid:
         code = r["code"]
-        desc = "公式意匠" if code in official else "自作（対応する標識が無い）"
+        desc = "標識令の図案" if code in signs else "独自作図（対応する標識なし）"
         n = counts.get(code)
         items.append(
             f'<div class="item"><img src="icons/{code}.svg" alt="" loading="lazy" />'
@@ -157,15 +157,16 @@ def main() -> None:
   <h2>アイコン一覧（{len(valid)}種）</h2>
   <p>仕様書（拡張版標準フォーマット k_2.1）の表4 で有効な共通規制種別コードすべて。
   件数は2026年6月の全国データでの出現数です。
-  「公式意匠」は標識令別表第二にもとづく標識SVGをそのまま使ったもの、
-  「自作」は対応する道路標識が無い路面標示などです。</p>
+  「標識令の図案」は別表第二で定められた図案をそのまま使ったもの（SVGは Wikimedia Commons の
+  再現物で、政府配布のファイルではありません）、「独自作図」は対応する道路標識が無い
+  路面標示などです。</p>
   <div class="grid">
     {"".join(items)}
   </div>
 
   <footer>
-    公式意匠のアイコンは標識令別表第二にもとづくもの（著作権法13条により著作権の対象外）、
-    路面標示などの自作分とツール類は MIT License です。
+    標識の図案は標識令別表第二で定められたもの（著作権法13条により著作権の対象外）。
+    路面標示などの独自作図分とツール類は MIT License です。
     <a href="https://github.com/shiwaku/jartic-regulation-sprite">GitHub</a> ／
     <a href="https://github.com/shiwaku/jartic-traffic-regulation-converter">変換器とビューワ</a>
   </footer>

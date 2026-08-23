@@ -1,9 +1,9 @@
-// 取り込んだアイコンが公式意匠と一致しているかを確かめる。
+// 取り込んだアイコンが標識の図案と一致しているかを確かめる。
 //
 //   node tools/compare-official.mjs          # 比べて結果を出す
 //   node tools/compare-official.mjs --strict # ずれていたら異常終了する
 //
-// data/official_refs.csv の対応で、icons/<コード>.svg と official/<ファイル>.svg を
+// data/official_refs.csv の対応で、icons/<コード>.svg と signs/<ファイル>.svg を
 // 並べた画像（.cache/compare.png）を作り、色の構成を比べる。どちらもリポジトリ内に
 // あるので、ネットワークは使わない。
 //
@@ -17,7 +17,7 @@ import sharp from 'sharp'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const OUT = path.join(ROOT, '.cache', 'compare.png')
-const REFS = path.join(ROOT, 'data', 'official_refs.csv')
+const REFS = path.join(ROOT, 'data', 'sign_refs.csv')
 /** これ以上ずれていたら取り込みが壊れていると見なす（ポイント）。 */
 const THRESHOLD = 8
 
@@ -68,11 +68,11 @@ async function main() {
   for (let i = 0; i < refs.length; i++) {
     const { code, file, signNo } = refs[i]
     const mine = path.join(ROOT, 'icons', `${code}.svg`)
-    const official = path.join(ROOT, 'official', `${file}.svg`)
-    for (const f of [mine, official]) {
+    const sign = path.join(ROOT, 'signs', `${file}.svg`)
+    for (const f of [mine, sign]) {
       if (!fs.existsSync(f)) throw new Error(`${path.relative(ROOT, f)} が無い`)
     }
-    for (const [j, f] of [mine, official].entries()) {
+    for (const [j, f] of [mine, sign].entries()) {
       tiles.push({
         input: await sharp(f)
           .resize(TILE - 6, TILE - 6, { fit: 'contain', background: { r: 255, g: 255, b: 255, alpha: 0 } })
@@ -81,7 +81,7 @@ async function main() {
         top: Math.floor(i / COLS) * (TILE + 10) + 5,
       })
     }
-    const m = await composition(mine), o = await composition(official)
+    const m = await composition(mine), o = await composition(sign)
     const diff = Math.max(...['red', 'blue', 'white', 'gray'].map((k) => Math.abs(m[k] - o[k])))
     report.push({ code, signNo, mine: m, official: o, diff, ok: diff < THRESHOLD })
   }
@@ -94,7 +94,7 @@ async function main() {
   }).composite(tiles).png().toFile(OUT)
 
   const bad = report.filter((r) => !r.ok)
-  console.log(`公式意匠を使っているコード ${report.length} / ずれ ${bad.length}`)
+  console.log(`標識の図案を使っているコード ${report.length} / ずれ ${bad.length}`)
   console.log(` 左が取り込み後、右が元の意匠: ${path.relative(ROOT, OUT)}`)
   const fmt = (c) => `赤${String(c.red).padStart(3)} 青${String(c.blue).padStart(3)} 白${String(c.white).padStart(3)}`
   for (const r of bad) {
