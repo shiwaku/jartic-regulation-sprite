@@ -25,10 +25,11 @@ from icons_lib import (  # noqa: E402
     blue_rect, blue_square, centered, cross, disc, mark_box_cross, mark_crosswalk,
     mark_arrows_lane, mark_line, mark_lines, mark_parking_bay, mark_platform,
     mark_roadside,
-    mark_shift, mark_stopline, mark_zebra, picto_bike, picto_bus, picto_car,
-    picto_cart, picto_clock, picto_clover, picto_height, picto_horn, picto_moto,
-    picto_p, picto_ped, picto_ped_child, picto_railcross, picto_signal, picto_tram,
-    picto_truck, picto_weight, place, road, ring, slash, svg, tri_down,
+    mark_shift, mark_stopline, mark_zebra, picto_ahead_priority, picto_bike,
+    picto_bus, picto_car, picto_cart, picto_clock, picto_clover, picto_height,
+    picto_horn, picto_moto, picto_p, picto_ped, picto_ped_child,
+    picto_priority_road, picto_railcross, picto_signal, picto_tram, picto_truck,
+    picto_weight, place, road, ring, slash, svg, tri_down, white_square_red_border,
 )
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -62,6 +63,11 @@ def instruct(picto: str, scale: float = 0.34) -> list[str]:
     return blue_square() + [centered(picto, scale)]
 
 
+def prohibit_square(picto: str, scale: float = 0.5) -> list[str]:
+    """歩行者向けの禁止。白地・赤枠の正方形に青のピクトと赤の斜線（331・332）。"""
+    return white_square_red_border() + [centered(picto, scale), slash()]
+
+
 def no_parking(mark: str) -> list[str]:
     """駐車・駐停車禁止。青地に赤の縁と赤の斜線／×。"""
     return blue_circle_red_ring() + [mark]
@@ -82,25 +88,31 @@ def marking(*parts: str) -> list[str]:
 
 DESIGNS: dict[str, tuple[str, str, list[str]]] = {
     # ---- 通行止め・通行禁止 ----
-    "1": ("325の4", "青地に大人と子ども（歩行者専用）", designate(picto_ped_child(), 0.30)),
+    "1": ("325の4", "青地に大人と子ども（歩行者専用）", designate(picto_ped_child(), 0.42)),
     "2": ("325の2", "青地に自転車", designate(picto_bike())),
-    "3": ("325の3", "青地に歩行者と自転車",
-          blue_circle() + [place(picto_ped(), -12, 14, 0.30),
-                           place(picto_bike(), 16, 30, 0.30)]),
+    "3": ("325の3", "青地に歩行者と自転車（左に歩行者、右下に自転車）",
+          blue_circle() + [place(picto_ped(), 10, 16, 0.28),
+                           place(picto_bike(), 20, 28, 0.26)]),
     "4": ("301", "白地・赤縁に赤の×（すべて通行止め）", prohibit(mark=cross())),
     "5": ("302", "白地・赤縁に赤の斜線（車両通行止め）", prohibit()),
     "6": ("310の2", "二輪車に赤の斜線（二人乗り禁止）", prohibit(picto_moto(BLUE), scale=0.42)),
-    "7": ("302＋踏切", "路面に踏切の×（車両通行止め・踏切）",
-          marking([f'<g transform="translate(10 10) scale(0.44)">{picto_railcross()}</g>'])),
-    "8": ("331", "青地の四角に歩行者と赤の斜線（歩行者通行止め）",
-          instruct(picto_ped(), 0.52) + [slash()]),
+    "7": ("302＋踏切", "白地・赤縁に踏切の記号と赤の斜線（車両通行止め・踏切）",
+          prohibit(picto_railcross(BLUE), scale=0.34)),
+    "8": ("331", "白地・赤枠の四角に歩行者と赤の斜線（歩行者通行止め）",
+          prohibit_square(picto_ped(BLUE), 0.46)),
     "9": ("320", "白地・赤縁に荷重の記号（重量制限。実物は「5.5t」の文字）",
           limit(picto_weight(BLUE))),
     "10": ("321", "白地・赤縁に高さの記号（高さ制限。実物は「3.3m」の文字）",
            limit(picto_height(BLUE))),
     "13": ("303", "赤地に白の横棒（車両進入禁止）", [disc(RED), bar_h()]),
-    "14": ("332", "歩行者と横断の縞に赤の斜線（歩行者横断禁止）",
-           blue_square() + [place(picto_ped(), -2, 6, 0.46)] + [slash()]),
+    "14": ("332", "白地・赤枠の四角に横断する歩行者と赤の斜線（歩行者横断禁止）",
+           white_square_red_border()
+           + [place(picto_ped(BLUE), -4, 4, 0.42),
+              f'<g opacity="0.9"><rect x="14" y="46" width="5" height="8" fill="{BLUE}"/>'
+              f'<rect x="24" y="46" width="5" height="8" fill="{BLUE}"/>'
+              f'<rect x="34" y="46" width="5" height="8" fill="{BLUE}"/>'
+              f'<rect x="44" y="46" width="5" height="8" fill="{BLUE}"/></g>',
+              slash()]),
     "19": ("路面標示", "白枠の中に斜縞（立入り禁止部分）", marking(mark_zebra(frame=True))),
     "76": ("路面標示", "白枠に×（停止禁止部分）", marking(mark_box_cross())),
     "90": ("路面標示", "斜縞（導流帯）", marking(mark_zebra())),
@@ -113,8 +125,10 @@ DESIGNS: dict[str, tuple[str, str, list[str]]] = {
     "50": ("312", "右折矢印に赤の斜線（車両横断禁止）", prohibit(arrow_turn("right", BLUE), scale=0.40)),
     "51": ("313", "転回矢印に赤の斜線（転回禁止）", prohibit(arrow_uturn(BLUE), scale=0.40)),
     "53": ("314", "2本の矢印に赤の斜線（追越し禁止）", prohibit(arrows_pass(BLUE), scale=0.42)),
-    "55": ("327の8", "青の四角に二段階の軌跡（原付の右折方法・二段階）", instruct(arrows_two_step(), 0.36)),
-    "56": ("327の9", "青の四角に右折矢印（原付の右折方法・小回り）", instruct(arrow_turn("right"), 0.34)),
+    "55": ("327の8", "青の円に二段階の軌跡（原付の右折方法・二段階）",
+           designate(arrows_two_step(), 0.34)),
+    "56": ("327の9", "白地・赤縁に右折矢印（原付の右折方法・小回り）",
+           [disc(WHITE), ring(RED), centered(arrow_turn("right", BLUE), 0.34)]),
     "57": ("路面標示", "青の四角に左折と右折の矢印（右左折の方法）",
            blue_square() + [place(arrow_turn("left"), -4, 14, 0.36),
                             place(arrow_turn("right"), 30, 14, 0.36)]),
@@ -200,9 +214,9 @@ DESIGNS: dict[str, tuple[str, str, list[str]]] = {
                     mark_arrows_lane())),
 
     # ---- 自転車・歩行者 ----
-    "81": ("325の3", "青の四角に自転車と歩道の線（普通自転車歩道通行可）",
-           blue_square() + [place(picto_bike(), 8, 14, 0.3),
-                            f'<line x1="10" y1="50" x2="54" y2="50" stroke="{WHITE}" '
+    "81": ("325の3", "青の円に自転車と歩道の線（普通自転車歩道通行可）",
+           blue_circle() + [place(picto_bike(), 12, 16, 0.28),
+                            f'<line x1="18" y1="46" x2="46" y2="46" stroke="{WHITE}" '
                             f'stroke-width="3"/>']),
     "82": ("路面標示", "路面に自転車と区分線（普通自転車の歩道通行部分）",
            marking([mark_line(WHITE, dashed=False, x=44)],
@@ -230,11 +244,9 @@ DESIGNS: dict[str, tuple[str, str, list[str]]] = {
 
     # ---- 優先・その他 ----
     "54": ("405", "青の四角に太い縦の道（優先道路）",
-           blue_square() + [f'<path d="M28 8 L36 8 L36 24 L44 30 L36 36 L36 56 L28 56 '
-                            f'L28 36 L20 30 L28 24 Z" fill="{WHITE}"/>']),
+           instruct(picto_priority_road(), 0.66)),
     "62": ("405", "青の四角に前方で交わる道（前方優先道路）",
-           blue_square() + [f'<rect x="28" y="26" width="8" height="30" fill="{WHITE}"/>',
-                            f'<rect x="12" y="18" width="40" height="8" fill="{WHITE}"/>']),
+           instruct(picto_ahead_priority(), 0.56)),
     "64": ("路面標示", "青の四角に本線と合流（優先本線車道）",
            blue_square() + [f'<rect x="28" y="8" width="8" height="48" fill="{WHITE}"/>',
                             f'<path d="M46 52 L36 34" stroke="{WHITE}" stroke-width="6"/>']),

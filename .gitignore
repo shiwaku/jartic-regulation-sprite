@@ -1,2 +1,5 @@
 node_modules/
 _site/
+.cache/
+__pycache__/
+*.py[cod]

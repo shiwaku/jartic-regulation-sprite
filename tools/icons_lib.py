@@ -59,6 +59,15 @@ def blue_square() -> list[str]:
     return [f'<rect x="5" y="5" width="54" height="54" rx="5" fill="{BLUE}"/>']
 
 
+def white_square_red_border() -> list[str]:
+    """歩行者向けの禁止標識の台紙。白地・赤枠の正方形（331・332）。"""
+    return [
+        f'<rect x="4" y="4" width="56" height="56" rx="4" fill="{WHITE}"/>',
+        f'<rect x="7.5" y="7.5" width="49" height="49" rx="3" fill="none" '
+        f'stroke="{RED}" stroke-width="7"/>',
+    ]
+
+
 def blue_rect() -> list[str]:
     """一方通行の台紙。横長の青。"""
     return [f'<rect x="3" y="18" width="58" height="28" rx="3" fill="{BLUE}"/>']
@@ -206,6 +215,22 @@ def picto_tram(fill: str = WHITE) -> str:
     )
 
 
+def picto_priority_road(fill: str = WHITE) -> str:
+    """優先道路（405）。太い縦の道が交差点で広がる形。"""
+    return (
+        f'<path d="M40 0 L60 0 L60 18 L78 30 L60 42 L60 60 L40 60 L40 42 L22 30 '
+        f'L40 18 Z" fill="{fill}"/>'
+    )
+
+
+def picto_ahead_priority(fill: str = WHITE) -> str:
+    """前方優先道路。前方の道が優先であることを示す T 字。"""
+    return (
+        f'<rect x="14" y="10" width="72" height="14" rx="2" fill="{fill}"/>'
+        f'<rect x="42" y="24" width="16" height="36" rx="2" fill="{fill}"/>'
+    )
+
+
 def picto_horn(fill: str = WHITE) -> str:
     """警笛。実物は二重の山形。"""
     return (
@@ -314,11 +339,17 @@ def arrow_uturn(fill: str = WHITE) -> str:
 
 
 def arrow_ring(fill: str = WHITE) -> str:
-    """環状交差点の右回り。"""
-    return (
-        f'<path d="M50 6 A24 24 0 1 1 26 30" fill="none" stroke="{fill}" stroke-width="8"/>'
-        f'<path d="M14 30 L38 30 L26 48 Z" fill="{fill}"/>'
-    )
+    """環状交差点の右回り。実物は円を描く3本の矢印。"""
+    out = []
+    for a in (0, 120, 240):
+        out.append(
+            f'<g transform="rotate({a} 50 30)">'
+            f'<path d="M50 4 A26 26 0 0 1 72 17" fill="none" stroke="{fill}" '
+            f'stroke-width="7" stroke-linecap="round"/>'
+            f'<path d="M66 6 L80 20 L62 24 Z" fill="{fill}"/>'
+            f'</g>'
+        )
+    return "".join(out)
 
 
 def arrows_lane(fill: str = WHITE) -> str:

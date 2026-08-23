@@ -87,12 +87,32 @@ map.addLayer({
 [Wikimedia Commons の道路標識SVG](https://commons.wikimedia.org/wiki/Road_signs_in_Japan)
 （著作権法13条により法令の図案は著作権の対象外、`PD-Japan-exempt`）で確認しました。
 
+### 公式意匠との突き合わせ
+
+**「参考にした」で済ませず、実際に並べて確かめられるようにしています。**
+
+```bash
+npm run compare              # 公式意匠を取ってきて並べ、色の構成を比べる
+npm run compare -- --strict  # 家族がずれていたら異常終了する
+```
+
+対応表は [`data/official_refs.csv`](data/official_refs.csv)（39コード）。公式意匠は
+`.cache/` に落として比較画像 `.cache/compare.png` を作ります（リポジトリには含めません）。
+赤・青・白の占める割合が30ポイント以上ずれていたら「台紙の家族を取り違えている」と
+見なす検査です。中の図形の細かい違いは見ません（そもそも実物どおりには描いていない）。
+
+この検査で、歩行者向けの禁止標識（`8`・`14`）を青の正方形にしていた、
+原付の右折方法（`55`・`56`）の台紙を間違えていた、といった誤りが見つかって直しました。
+詳しくは [`docs/design-spec.md`](docs/design-spec.md#公式意匠との突き合わせ)。
+外部サイトから取得するため CI では回していません。
+
 ## 作り直す
 
 ```bash
 npm install
 npm run icons     # data/codes.csv と tools/gen_icons.py から icons/*.svg を作る
 npm run verify    # コード表・SVG・スプライトの整合を見る
+npm run compare   # 公式意匠と並べて突き合わせる
 npm run docs      # docs/icon-list.md を作り直す
 npm run build     # _site/sprite{,@2x}.{png,json} を作る
 npm start         # ビルドしてローカルで配信（http://localhost:8080）

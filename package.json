@@ -10,6 +10,7 @@
     "postbuild": "python tools/gen_site.py",
     "docs": "python tools/gen_icon_list.py",
     "verify": "python tools/verify_icons.py",
+    "compare": "node tools/compare-official.mjs",
     "start": "npm run build && npx http-server -c-1 ./_site"
   },
   "license": "MIT",
