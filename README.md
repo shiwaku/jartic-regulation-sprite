@@ -116,4 +116,6 @@ python tools/pull_counts.py   # ../jartic-traffic-regulation-converter/data/pars
 
 ## ライセンス
 
-Apache License 2.0（[LICENSE](LICENSE)）。
+MIT License（[LICENSE](LICENSE)）。アイコン（`icons/*.svg`）と生成物のスプライトも
+これに含まれます。参考にした道路標識の意匠そのものは、著作権法13条により
+著作権の対象外です（道路標識、区画線及び道路標示に関する命令 別表第二）。
