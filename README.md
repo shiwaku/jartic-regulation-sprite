@@ -119,6 +119,7 @@ npm run compare -- --strict  # ずれていたら異常終了する
 npm install
 npm run icons     # signs/ の取り込み＋独自作図分の生成で icons/*.svg を作る
 npm run verify    # コード表・SVG・スプライトの整合を見る
+npm run bounds    # 独自作図が枠や台紙からはみ出していないか調べる
 npm run compare   # 標識令の図案と並べて突き合わせる
 npm run docs      # docs/icon-list.md を作り直す
 npm run build     # _site/sprite{,@2x}.{png,json} を作る
@@ -128,7 +129,8 @@ npm start         # ビルドしてローカルで配信（http://localhost:8080
 依存は Python 3.12 標準ライブラリと [@unvt/sprite-one](https://github.com/unvt/sprite-one) だけです。
 `icons/*.svg` は生成物ですがリポジトリに入れています（差分が見えるように）。
 CI は `npm run icons` を回して**コミットされた SVG と生成結果が一致するか**を確かめ、
-`npm run compare -- --strict` で標識令の図案との一致も見ます。
+`npm run compare -- --strict` で標識令の図案との一致、
+`npm run bounds -- --strict` ではみ出しも見ます。
 
 実データでの件数を一覧に載せるには、変換器のリポジトリを隣に置いて次を実行します。
 

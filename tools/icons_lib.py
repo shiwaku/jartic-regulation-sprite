@@ -434,13 +434,13 @@ def mark_box_cross() -> list[str]:
 
 
 def mark_crosswalk(diagonal: bool = False) -> list[str]:
-    """横断歩道の縞。"""
+    """横断歩道の縞。斜めのものは路面からはみ出すのでクリップする。"""
     out = []
-    for i in range(5):
+    for i in range(6):
         if diagonal:
-            x = 6 + i * 12
+            x = -8 + i * 12
             out.append(f'<path d="M{x} 54 L{x + 16} 10 L{x + 22} 10 L{x + 6} 54 Z" '
-                       f'fill="{WHITE}"/>')
+                       f'fill="{WHITE}" clip-path="url(#c)"/>')
         else:
             x = 8 + i * 11
             out.append(f'<rect x="{x}" y="10" width="7" height="44" fill="{WHITE}"/>')
@@ -455,12 +455,13 @@ def mark_arrows_lane(n: int = 3) -> list[str]:
                     f'fill="none" stroke="{WHITE}" stroke-width="4.5" '
                     f'stroke-linecap="round" stroke-linejoin="round"/>')
         d = -1 if kind == "left" else 1
-        return (f'<path d="M{x} 50 L{x} 32 L{x + 9 * d} 32 M{x + 3 * d} 25 '
-                f'L{x + 11 * d} 32 L{x + 3 * d} 39" fill="none" stroke="{WHITE}" '
+        return (f'<path d="M{x} 50 L{x} 32 L{x + 8 * d} 32 M{x + 2 * d} 26 '
+                f'L{x + 10 * d} 32 L{x + 2 * d} 38" fill="none" stroke="{WHITE}" '
                 f'stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>')
     if n == 1:
         return [a(32, "up")]
-    return [a(15, "left"), a(32, "up"), a(49, "right")]
+    # 左右の矢印は路面(3〜61)の中に収める
+    return [a(19, "left"), a(32, "up"), a(45, "right")]
 
 
 def mark_roadside() -> list[str]:

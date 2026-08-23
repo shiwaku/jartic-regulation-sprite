@@ -46,6 +46,9 @@ jobs:
       - name: 標識令の図案と一致しているか確かめる
         run: npm run compare -- --strict
 
+      - name: 枠や台紙からはみ出していないか確かめる
+        run: npm run bounds -- --strict
+
       - name: 一覧を生成し直して差分が無いか見る
         run: |
           set -euo pipefail

@@ -10,6 +10,7 @@
     "postbuild": "python tools/gen_site.py",
     "docs": "python tools/gen_icon_list.py",
     "verify": "python tools/verify_icons.py",
+    "bounds": "node tools/check-bounds.mjs",
     "compare": "node tools/compare-signs.mjs",
     "start": "npm run build && npx http-server -c-1 ./_site"
   },
