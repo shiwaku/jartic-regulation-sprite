@@ -16,6 +16,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
 from gen_icons import DESIGNS  # noqa: E402
+from import_official import refs as official_refs  # noqa: E402
 
 CODES = ROOT / "data" / "codes.csv"
 COUNTS = ROOT / "data" / "counts.csv"
@@ -40,21 +41,30 @@ def main() -> None:
         "コードは JARTIC 交通規制情報の共通規制種別コード。アイコンのキーはコードそのもので、",
         "MapLibre では `['concat', 'reg:', ['get', 'code']]` で引けます。",
         "",
-        "「参考」は道路標識、区画線及び道路標示に関する命令の番号（参考情報）。",
-        "実物が文字だけで種別を表すものは、文字を使えないため幾何図形に置き換えています",
-        "（理由は各行の意匠の説明と [design-spec.md](design-spec.md)）。",
+        "「出所」が公式意匠のものは、標識令別表第二にもとづく Wikimedia Commons の",
+        "標識SVG（`PD-Japan-exempt`）を 64×64 に正規化して使っています（`official/`）。",
+        "対応する道路標識が無い路面標示などは自作です。詳しくは",
+        "[design-spec.md](design-spec.md)。",
         "",
     ]
 
+    official = {r["code"]: r for r in official_refs()}
     valid = [r for r in rows if r["status"] == "valid"]
-    cols = ["コード", "交通規制種別", "参考", "意匠"]
+    cols = ["コード", "交通規制種別", "出所", "参考", "意匠"]
     if counts:
         cols.append("実データの件数")
     lines += ["| " + " | ".join(cols) + " |", "|" + "---|" * len(cols)]
     for r in valid:
         code = r["code"]
-        ref, desc, _parts = DESIGNS[code]
-        cells = [f"`{code}`", r["name"], ref, desc]
+        o = official.get(code)
+        if o:
+            src = "公式意匠"
+            ref = o["sign_no"]
+            desc = o["note"] or "標識令別表第二の意匠をそのまま使う"
+        else:
+            src = "自作"
+            ref, desc, _parts = DESIGNS[code]
+        cells = [f"`{code}`", r["name"], src, ref, desc]
         if counts:
             n = counts.get(code)
             cells.append(f"{int(n):,}" if n else "－")

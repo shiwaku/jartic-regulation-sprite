@@ -21,6 +21,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
 from gen_icons import DESIGNS  # noqa: E402
+from import_official import refs as official_refs  # noqa: E402
 
 SITE = ROOT / "_site"
 ICONS = ROOT / "icons"
@@ -99,17 +100,18 @@ def main() -> None:
 
     sprite = json.loads((SITE / "sprite.json").read_text(encoding="utf-8"))
 
+    official = {r["code"] for r in official_refs()}
     items = []
     for r in valid:
         code = r["code"]
-        _ref, desc, _parts = DESIGNS[code]
+        desc = "公式意匠" if code in official else "自作（対応する標識が無い）"
         n = counts.get(code)
         items.append(
             f'<div class="item"><img src="icons/{code}.svg" alt="" loading="lazy" />'
             f'<div class="meta"><div class="code">{code}</div>'
             f'<div class="name">{html.escape(r["name"])}</div>'
             f'<div class="n">{f"{n:,} 件" if n else "実データに無し"}</div>'
-            f'<div class="note" hidden>{html.escape(desc)}</div></div></div>'
+            f'<div class="note">{html.escape(desc)}</div></div></div>'
         )
 
     usage = html.escape(
@@ -154,13 +156,16 @@ def main() -> None:
 
   <h2>アイコン一覧（{len(valid)}種）</h2>
   <p>仕様書（拡張版標準フォーマット k_2.1）の表4 で有効な共通規制種別コードすべて。
-  件数は2026年6月の全国データでの出現数です。</p>
+  件数は2026年6月の全国データでの出現数です。
+  「公式意匠」は標識令別表第二にもとづく標識SVGをそのまま使ったもの、
+  「自作」は対応する道路標識が無い路面標示などです。</p>
   <div class="grid">
     {"".join(items)}
   </div>
 
   <footer>
-    アイコンは標識令別表第二の意匠を参考にした自作で、MIT License です。
+    公式意匠のアイコンは標識令別表第二にもとづくもの（著作権法13条により著作権の対象外）、
+    路面標示などの自作分とツール類は MIT License です。
     <a href="https://github.com/shiwaku/jartic-regulation-sprite">GitHub</a> ／
     <a href="https://github.com/shiwaku/jartic-traffic-regulation-converter">変換器とビューワ</a>
   </footer>

@@ -44,11 +44,12 @@ def main() -> int:
         text = p.read_text(encoding="utf-8")
         if "<text" in text:
             problems.append(f"{p.name}: 文字要素を含む（ラスタライズがフォントに依存する）")
-        m = re.search(r'width="(\d+)" height="(\d+)"', text)
+        m = re.search(r'width="(\d+)"\s+height="(\d+)"', text)
         if not m or (int(m.group(1)), int(m.group(2))) != (SIZE, SIZE):
-            problems.append(f"{p.name}: {SIZE}×{SIZE} でない")
-        if 'viewBox="0 0 64 64"' not in text:
-            problems.append(f"{p.name}: viewBox が 0 0 64 64 でない")
+            problems.append(f"{p.name}: 描画サイズが {SIZE}×{SIZE} でない")
+        # 公式意匠は元の座標系（例 0 0 435 435）を保つので、値は問わず有無だけ見る
+        if "viewBox=" not in text:
+            problems.append(f"{p.name}: viewBox が無い")
 
     if SPRITE.exists():
         sprite = json.loads(SPRITE.read_text(encoding="utf-8"))

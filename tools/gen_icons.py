@@ -32,6 +32,8 @@ from icons_lib import (  # noqa: E402
     picto_weight, place, road, ring, slash, svg, tri_down, white_square_red_border,
 )
 
+from import_official import import_official, refs  # noqa: E402
+
 ROOT = Path(__file__).resolve().parents[1]
 ICONS = ROOT / "icons"
 CODES = ROOT / "data" / "codes.csv"
@@ -261,28 +263,32 @@ DESIGNS: dict[str, tuple[str, str, list[str]]] = {
 def main() -> None:
     with CODES.open(encoding="utf-8") as f:
         codes = [r for r in csv.DictReader(f)]
-    valid = [r for r in codes if r["status"] == "valid"]
-    names = {r["code"]: r["name"] for r in codes}
+    valid = {r["code"] for r in codes if r["status"] == "valid"}
 
-    missing = [r["code"] for r in valid if r["code"] not in DESIGNS]
-    extra = [c for c in DESIGNS if c not in {r["code"] for r in valid}]
+    missing = sorted(valid - set(DESIGNS) - {r["code"] for r in refs()}, key=int)
+    extra = sorted(set(DESIGNS) - valid, key=int)
     if missing or extra:
         raise SystemExit(f"意匠が未定義: {missing} / 有効コードに無い定義: {extra}")
 
     ICONS.mkdir(exist_ok=True)
-    for old in ICONS.glob("*.svg"):
-        old.unlink()
+    for stale in ICONS.glob("*.svg"):
+        stale.unlink()
 
-    for code in sorted(DESIGNS, key=int):
+    # 対応する道路標識があるものは公式意匠を使う。DESIGNS の定義より優先する。
+    official = import_official()
+
+    hand = [c for c in sorted(DESIGNS, key=int) if c not in official]
+    for code in hand:
         _ref, _desc, parts = DESIGNS[code]
         # 斜縞は路面の外にはみ出すのでクリップを付ける
         needs_clip = 'clip-path="url(#c)"' in "".join(parts)
         (ICONS / f"{code}.svg").write_text(svg(parts, clip=needs_clip), encoding="utf-8")
 
-    print(f"{len(DESIGNS)} 個のアイコンを {ICONS} に書き出した")
-    print(f"有効コード {len(valid)} / 未使用 {len(codes) - len(valid)}")
-    for code in sorted(DESIGNS, key=int)[:3]:
-        print(f"  例: {code}.svg  {names[code]}")
+    made = official | set(hand)
+    if made != valid:
+        raise SystemExit(f"作れていないコード: {sorted(valid - made, key=int)}")
+    print(f"アイコン {len(made)} 個: 公式意匠 {len(official)} / 自作 {len(hand)}")
+    print(f"自作のコード: {' '.join(hand)}")
 
 
 if __name__ == "__main__":

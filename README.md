@@ -76,41 +76,39 @@ map.addLayer({
 `10 高さ制限`・`84 並進可`・`101 高齢運転者等標章自動車停車可`・
 `102 高齢運転者等専用時間制限駐車区間`）。
 
-## アイコンは自作です
+## アイコンの出所
 
-**道路標識の画像を取り込んではいません。** 標識令別表第二の意匠を参考に、
-地図で 20px 前後に縮めても読めるように描き直したものです。
-中の文字（最高速度の数字など）は幾何図形に置き換えています。
-理由と対応は [`docs/design-spec.md`](docs/design-spec.md) に書いてあります。
+**対応する道路標識があるものは、公式意匠をそのまま使っています。** 地図の上で
+「見慣れた標識」であることを優先しました。
 
-参考にした意匠は
-[Wikimedia Commons の道路標識SVG](https://commons.wikimedia.org/wiki/Road_signs_in_Japan)
-（著作権法13条により法令の図案は著作権の対象外、`PD-Japan-exempt`）で確認しました。
+| 出所 | 数 | 内容 |
+|---|---|---|
+| 公式意匠 | 43 | 標識令別表第二にもとづく標識SVGを 64×64 に正規化（`official/`） |
+| 自作 | 30 | 対応する道路標識が無いもの（路面標示・信号機など） |
 
-### 公式意匠との突き合わせ
+公式意匠のSVGは文字がすでにパス化されているので、`止まれ`・`50`・`3.3m`・`通行止`
+といった文字もそのまま入り、ラスタライズ時にフォントを必要としません。
+取り込みは `width` / `height` を 64 にするだけで、**パスには手を入れません**。
 
-**「参考にした」で済ませず、実際に並べて確かめられるようにしています。**
+出所はコードごとに [`docs/icon-list.md`](docs/icon-list.md) の「出所」列と
+[`data/official_refs.csv`](data/official_refs.csv) で辿れます。
+意匠の考え方と、小さくしたときに読みにくいものは
+[`docs/design-spec.md`](docs/design-spec.md)。
+
+### 取り込みが崩れていないか確かめる
 
 ```bash
-npm run compare              # 公式意匠を取ってきて並べ、色の構成を比べる
-npm run compare -- --strict  # 家族がずれていたら異常終了する
+npm run compare              # icons/ と official/ を並べ、色の構成を比べる
+npm run compare -- --strict  # ずれていたら異常終了する
 ```
 
-対応表は [`data/official_refs.csv`](data/official_refs.csv)（39コード）。公式意匠は
-`.cache/` に落として比較画像 `.cache/compare.png` を作ります（リポジトリには含めません）。
-赤・青・白の占める割合が30ポイント以上ずれていたら「台紙の家族を取り違えている」と
-見なす検査です。中の図形の細かい違いは見ません（そもそも実物どおりには描いていない）。
-
-この検査で、歩行者向けの禁止標識（`8`・`14`）を青の正方形にしていた、
-原付の右折方法（`55`・`56`）の台紙を間違えていた、といった誤りが見つかって直しました。
-詳しくは [`docs/design-spec.md`](docs/design-spec.md#公式意匠との突き合わせ)。
-外部サイトから取得するため CI では回していません。
+比較画像は `.cache/compare.png`。どちらもリポジトリ内にあるのでネットワークは使いません。
 
 ## 作り直す
 
 ```bash
 npm install
-npm run icons     # data/codes.csv と tools/gen_icons.py から icons/*.svg を作る
+npm run icons     # official/ の取り込み＋自作分の生成で icons/*.svg を作る
 npm run verify    # コード表・SVG・スプライトの整合を見る
 npm run compare   # 公式意匠と並べて突き合わせる
 npm run docs      # docs/icon-list.md を作り直す
@@ -120,7 +118,8 @@ npm start         # ビルドしてローカルで配信（http://localhost:8080
 
 依存は Python 3.12 標準ライブラリと [@unvt/sprite-one](https://github.com/unvt/sprite-one) だけです。
 `icons/*.svg` は生成物ですがリポジトリに入れています（差分が見えるように）。
-CI は `npm run icons` を回して**コミットされた SVG と生成結果が一致するか**を確かめます。
+CI は `npm run icons` を回して**コミットされた SVG と生成結果が一致するか**を確かめ、
+`npm run compare -- --strict` で公式意匠との一致も見ます。
 
 実データでの件数を一覧に載せるには、変換器のリポジトリを隣に置いて次を実行します。
 
@@ -140,6 +139,13 @@ python tools/pull_counts.py   # ../jartic-traffic-regulation-converter/data/pars
 
 ## ライセンス
 
-MIT License（[LICENSE](LICENSE)）。アイコン（`icons/*.svg`）と生成物のスプライトも
-これに含まれます。参考にした道路標識の意匠そのものは、著作権法13条により
-著作権の対象外です（道路標識、区画線及び道路標示に関する命令 別表第二）。
+**ツール類・自作アイコン**: MIT License（[LICENSE](LICENSE)）。
+
+**公式意匠のアイコン（`official/` とそれに由来する `icons/*.svg`）**: 著作権の対象外。
+道路標識の図案は「道路標識、区画線及び道路標示に関する命令」別表第二で定められた
+法令の図案であり、著作権法13条により著作権の対象になりません。ファイルは
+[Wikimedia Commons の道路標識SVG](https://commons.wikimedia.org/wiki/Road_signs_in_Japan)
+（`PD-Japan-exempt`）から取り込んでおり、各ファイルの先頭に取得元をコメントで
+書いています。対応表は [`data/official_refs.csv`](data/official_refs.csv)。
+
+生成物のスプライト（`sprite.png` / `sprite.json`）は両方を含みます。
