@@ -20,6 +20,7 @@ from import_signs import refs as sign_refs  # noqa: E402
 
 CODES = ROOT / "data" / "codes.csv"
 COUNTS = ROOT / "data" / "counts.csv"
+REASONS = ROOT / "data" / "handdrawn_reasons.csv"
 OUT = ROOT / "docs" / "icon-list.md"
 
 
@@ -44,12 +45,18 @@ def main() -> None:
         "「出所」が標識の図案のものは、**標識令別表第二で定められた図案**を 64×64 に",
         "正規化して使っています（`signs/`）。SVGファイル自体は政府配布ではなく、",
         "Wikimedia Commons の利用者が図案を再現したもの（`PD-Japan-exempt`）です。",
-        "対応する道路標識が無い路面標示などは独自作図です。詳しくは",
+        "「独自作図（SVG無し）」は別表第二に標識があるが Commons に SVG が無いもの、",
+        "「独自作図（標識なし）」は道路標示などで規定され標識が無いものです。",
+        "根拠は [`../data/handdrawn_reasons.csv`](../data/handdrawn_reasons.csv)。詳しくは",
         "[design-spec.md](design-spec.md)。",
         "",
     ]
 
     signs = {r["code"]: r for r in sign_refs()}
+    reasons = {}
+    if REASONS.exists():
+        with REASONS.open(encoding="utf-8") as f:
+            reasons = {r["code"]: r for r in csv.DictReader(f)}
     valid = [r for r in rows if r["status"] == "valid"]
     cols = ["コード", "交通規制種別", "出所", "参考", "意匠"]
     if counts:
@@ -63,8 +70,14 @@ def main() -> None:
             ref = o["sign_no"]
             desc = o["note"] or "標識令別表第二で定められた図案をそのまま使う"
         else:
-            src = "自作"
-            ref, desc, _parts = DESIGNS[code]
+            rs = reasons.get(code, {})
+            if rs.get("reason") == "no_svg":
+                src = "独自作図（SVG無し）"
+                ref = rs.get("sign_no", "")
+            else:
+                src = "独自作図（標識なし）"
+                ref = "－"
+            _r, desc, _parts = DESIGNS[code]
         cells = [f"`{code}`", r["name"], src, ref, desc]
         if counts:
             n = counts.get(code)
