@@ -1,0 +1,71 @@
+name: pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+
+      # コミットされた SVG が生成器の出力と一致していることを確かめる。
+      # 手で SVG を直すと再生成で消えるため、ここで気づけるようにする。
+      - name: アイコンを生成し直して差分が無いか見る
+        run: |
+          set -euo pipefail
+          python tools/gen_icons.py
+          git diff --exit-code --stat icons/ || {
+            echo "::error::icons/ がコミット内容と違う。npm run icons を回して commit する"
+            exit 1
+          }
+
+      - name: 整合を確かめる
+        run: python tools/verify_icons.py
+
+      - name: 一覧を生成し直して差分が無いか見る
+        run: |
+          set -euo pipefail
+          python tools/gen_icon_list.py
+          git diff --exit-code --stat docs/icon-list.md || {
+            echo "::error::docs/icon-list.md が古い。npm run docs を回して commit する"
+            exit 1
+          }
+
+      - run: npm run build
+      - name: スプライトの中身を確かめる
+        run: python tools/verify_icons.py
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v4

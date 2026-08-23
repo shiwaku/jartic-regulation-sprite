@@ -1,0 +1,475 @@
+# -*- coding: utf-8 -*-
+"""アイコンを組み立てる部品。
+
+64×64 の中に「標識・標示の家族」が読み取れる形を置く。地図上では 20〜24px で
+描かれるため、実物の意匠をそのまま縮小しても潰れる。そこで
+
+  形と色で家族を示し（禁止=赤リング / 指定・専用=青地 / 指示=青四角 /
+  路面標示=灰の路面に白線）、中の図形で種別を分ける
+
+という方針にしている。詳しくは docs/design-spec.md。
+
+**文字は使わない。** ラスタライズ時のフォントに依存して再現しなくなるため、
+実物が文字で表す種別（最高速度の数字、停車可の「停」など）は幾何図形で置き換える。
+"""
+from __future__ import annotations
+
+# 標識令の色に近い値（Wikimedia Commons の標識SVGで使われている値に合わせた）
+RED = "#ED1C23"
+BLUE = "#0066B3"
+WHITE = "#FFFFFF"
+BLACK = "#1F2328"
+YELLOW = "#F2C200"
+ROAD = "#8A9199"
+ROAD_DARK = "#6E757D"
+GREEN = "#2E8B41"
+AMBER = "#F5A623"
+
+SIZE = 64
+C = SIZE / 2  # 中心
+
+# ---- 台紙 ------------------------------------------------------------------
+
+
+def disc(fill: str, r: float = 27, cx: float = C, cy: float = C) -> str:
+    return f'<circle cx="{cx}" cy="{cy}" r="{r}" fill="{fill}"/>'
+
+
+def ring(color: str = RED, r: float = 23.5, w: float = 7) -> str:
+    return f'<circle cx="{C}" cy="{C}" r="{r}" fill="none" stroke="{color}" stroke-width="{w}"/>'
+
+
+def white_circle_red_ring() -> list[str]:
+    """禁止標識の台紙。白地に赤の縁。"""
+    return [disc(WHITE), ring(RED)]
+
+
+def blue_circle() -> list[str]:
+    """指定・専用の台紙。青地。"""
+    return [disc(BLUE)]
+
+
+def blue_circle_red_ring() -> list[str]:
+    """駐車・駐停車禁止の台紙。青地に赤の縁。"""
+    return [disc(BLUE), ring(RED)]
+
+
+def blue_square() -> list[str]:
+    """指示標識の台紙。角を丸めた青の正方形。"""
+    return [f'<rect x="5" y="5" width="54" height="54" rx="5" fill="{BLUE}"/>']
+
+
+def blue_rect() -> list[str]:
+    """一方通行の台紙。横長の青。"""
+    return [f'<rect x="3" y="18" width="58" height="28" rx="3" fill="{BLUE}"/>']
+
+
+def blue_pentagon() -> list[str]:
+    """横断歩道の台紙。上が尖った五角形（実物は家型）。"""
+    return [f'<path d="M32 3 L59 22 L52 60 L12 60 L5 22 Z" fill="{BLUE}"/>']
+
+
+def tri_down(fill: str, stroke: str, w: float = 6) -> list[str]:
+    """一時停止・徐行の台紙。逆三角形。"""
+    return [
+        f'<path d="M4 12 L60 12 L32 58 Z" fill="{fill}" stroke="{stroke}" '
+        f'stroke-width="{w}" stroke-linejoin="round"/>'
+    ]
+
+
+def road(dark: bool = False) -> list[str]:
+    """路面標示の台紙。アスファルト。"""
+    return [f'<rect x="3" y="3" width="58" height="58" rx="4" fill="{ROAD_DARK if dark else ROAD}"/>']
+
+
+# ---- 禁止の記号 ------------------------------------------------------------
+
+
+def slash(color: str = RED, w: float = 6) -> str:
+    """左上から右下への赤い斜線（1本）。"""
+    return (
+        f'<line x1="13" y1="13" x2="51" y2="51" stroke="{color}" '
+        f'stroke-width="{w}" stroke-linecap="round"/>'
+    )
+
+
+def cross(color: str = RED, w: float = 6) -> str:
+    """赤い×（通行止め・駐停車禁止）。"""
+    return (
+        f'<line x1="13" y1="13" x2="51" y2="51" stroke="{color}" stroke-width="{w}" '
+        f'stroke-linecap="round"/>'
+        f'<line x1="51" y1="13" x2="13" y2="51" stroke="{color}" stroke-width="{w}" '
+        f'stroke-linecap="round"/>'
+    )
+
+
+def bar_h(fill: str = WHITE) -> str:
+    """車両進入禁止の白い横棒。"""
+    return f'<rect x="12" y="27" width="40" height="10" rx="1.5" fill="{fill}"/>'
+
+
+# ---- 図形の配置 ------------------------------------------------------------
+
+
+def place(body: str, tx: float, ty: float, scale: float) -> str:
+    """100×60 の箱で描いた図形を、指定位置・倍率に置く。"""
+    return f'<g transform="translate({tx} {ty}) scale({scale})">{body}</g>'
+
+
+def centered(body: str, scale: float = 0.34, dy: float = 0) -> str:
+    """100×60 の箱の図形を中央に置く。"""
+    return place(body, C - 50 * scale, C - 30 * scale + dy, scale)
+
+
+# ---- 乗り物・人（100×60 の箱で描く） --------------------------------------
+
+
+def picto_car(fill: str = WHITE) -> str:
+    return (
+        f'<path d="M8 44 L16 26 C18 21 23 18 30 18 L62 18 C70 18 77 22 84 30 '
+        f'L92 39 L92 44 Z" fill="{fill}"/>'
+        f'<circle cx="28" cy="46" r="8" fill="{fill}"/>'
+        f'<circle cx="74" cy="46" r="8" fill="{fill}"/>'
+    )
+
+
+def picto_truck(fill: str = WHITE) -> str:
+    return (
+        f'<path d="M4 18 L58 18 L58 44 L4 44 Z" fill="{fill}"/>'
+        f'<path d="M62 26 L80 26 L94 38 L94 44 L62 44 Z" fill="{fill}"/>'
+        f'<circle cx="24" cy="46" r="8" fill="{fill}"/>'
+        f'<circle cx="78" cy="46" r="8" fill="{fill}"/>'
+    )
+
+
+def picto_bus(fill: str = WHITE) -> str:
+    return (
+        f'<path d="M6 16 L94 16 L94 44 L6 44 Z" fill="{fill}"/>'
+        f'<circle cx="26" cy="46" r="8" fill="{fill}"/>'
+        f'<circle cx="74" cy="46" r="8" fill="{fill}"/>'
+    )
+
+
+def picto_moto(fill: str = WHITE) -> str:
+    return (
+        f'<circle cx="20" cy="40" r="13" fill="none" stroke="{fill}" stroke-width="6"/>'
+        f'<circle cx="80" cy="40" r="13" fill="none" stroke="{fill}" stroke-width="6"/>'
+        f'<path d="M20 40 L44 22 L62 22 L80 40" fill="none" stroke="{fill}" '
+        f'stroke-width="7" stroke-linejoin="round"/>'
+        f'<circle cx="52" cy="10" r="8" fill="{fill}"/>'
+    )
+
+
+def picto_bike(fill: str = WHITE) -> str:
+    return (
+        f'<circle cx="20" cy="42" r="14" fill="none" stroke="{fill}" stroke-width="5"/>'
+        f'<circle cx="80" cy="42" r="14" fill="none" stroke="{fill}" stroke-width="5"/>'
+        f'<path d="M20 42 L44 42 L58 20 L80 42" fill="none" stroke="{fill}" '
+        f'stroke-width="5" stroke-linejoin="round"/>'
+        f'<path d="M44 42 L58 20 L74 20" fill="none" stroke="{fill}" stroke-width="5"/>'
+    )
+
+
+def picto_ped(fill: str = WHITE, x: float = 0) -> str:
+    """歩行者。100×60 の箱の中で x だけずらせる。"""
+    return (
+        f'<g transform="translate({x} 0)">'
+        f'<circle cx="50" cy="10" r="8" fill="{fill}"/>'
+        f'<path d="M50 20 C58 20 62 26 62 32 L62 40 L56 40 L56 58 L48 58 '
+        f'L48 42 L44 58 L36 58 L42 34 L38 40 L34 34 C38 24 44 20 50 20 Z" fill="{fill}"/>'
+        f'</g>'
+    )
+
+
+def picto_ped_child(fill: str = WHITE) -> str:
+    """大人と子ども（歩行者専用）。"""
+    return (
+        f'<g transform="translate(-18 0)">{picto_ped(fill)}</g>'
+        f'<g transform="translate(30 16) scale(0.62)">{picto_ped(fill)}</g>'
+    )
+
+
+def picto_cart(fill: str = WHITE) -> str:
+    """荷車（自転車以外の軽車両）。"""
+    return (
+        f'<circle cx="34" cy="42" r="15" fill="none" stroke="{fill}" stroke-width="5"/>'
+        f'<path d="M34 42 L34 27 L94 14" fill="none" stroke="{fill}" stroke-width="6"/>'
+        f'<path d="M20 27 L70 27" stroke="{fill}" stroke-width="6"/>'
+    )
+
+
+def picto_tram(fill: str = WHITE) -> str:
+    return (
+        f'<path d="M16 12 L84 12 L84 46 L16 46 Z" fill="{fill}"/>'
+        f'<path d="M50 12 L50 0" stroke="{fill}" stroke-width="4"/>'
+        f'<path d="M6 54 L94 54" stroke="{fill}" stroke-width="5"/>'
+    )
+
+
+def picto_horn(fill: str = WHITE) -> str:
+    """警笛。実物は二重の山形。"""
+    return (
+        f'<path d="M20 8 L44 30 L20 52" fill="none" stroke="{fill}" stroke-width="9" '
+        f'stroke-linejoin="round" stroke-linecap="round"/>'
+        f'<path d="M52 8 L76 30 L52 52" fill="none" stroke="{fill}" stroke-width="9" '
+        f'stroke-linejoin="round" stroke-linecap="round"/>'
+    )
+
+
+def picto_p(fill: str = WHITE) -> str:
+    """駐車の P。文字ではなく図形として描く。"""
+    return (
+        f'<path d="M30 4 L58 4 C74 4 84 13 84 26 C84 39 74 47 58 47 L46 47 L46 58 '
+        f'L30 58 Z M46 17 L46 34 L57 34 C63 34 67 31 67 26 C67 20 63 17 57 17 Z" '
+        f'fill="{fill}" fill-rule="evenodd"/>'
+    )
+
+
+def picto_signal(body: str = BLACK) -> str:
+    """信号機。3灯。"""
+    return (
+        f'<rect x="30" y="0" width="40" height="60" rx="7" fill="{body}"/>'
+        f'<circle cx="50" cy="12" r="7" fill="{RED}"/>'
+        f'<circle cx="50" cy="30" r="7" fill="{AMBER}"/>'
+        f'<circle cx="50" cy="48" r="7" fill="{GREEN}"/>'
+    )
+
+
+def picto_railcross(fill: str = WHITE) -> str:
+    """踏切。×と遮断機の棒。"""
+    return (
+        f'<path d="M22 4 L78 44 M78 4 L22 44" stroke="{fill}" stroke-width="8" '
+        f'stroke-linecap="round"/>'
+        f'<rect x="6" y="52" width="88" height="7" rx="3" fill="{fill}"/>'
+    )
+
+
+def picto_weight(fill: str = WHITE) -> str:
+    """重量制限。上からの荷重。"""
+    return (
+        f'<path d="M50 2 L50 22 M40 14 L50 24 L60 14" fill="none" stroke="{fill}" '
+        f'stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>'
+        f'<rect x="18" y="30" width="64" height="14" rx="2" fill="{fill}"/>'
+        f'<circle cx="34" cy="52" r="6" fill="{fill}"/>'
+        f'<circle cx="66" cy="52" r="6" fill="{fill}"/>'
+    )
+
+
+def picto_height(fill: str = WHITE) -> str:
+    """高さ制限。上下の矢印と天井。"""
+    return (
+        f'<rect x="14" y="2" width="72" height="8" rx="2" fill="{fill}"/>'
+        f'<path d="M50 16 L50 54 M40 24 L50 14 L60 24 M40 46 L50 56 L60 46" fill="none" '
+        f'stroke="{fill}" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>'
+    )
+
+
+def picto_clock(fill: str = WHITE) -> str:
+    """時間制限。時計。"""
+    return (
+        f'<circle cx="50" cy="30" r="26" fill="none" stroke="{fill}" stroke-width="6"/>'
+        f'<path d="M50 14 L50 32 L64 40" fill="none" stroke="{fill}" stroke-width="6" '
+        f'stroke-linecap="round"/>'
+    )
+
+
+def picto_clover(fill: str = WHITE) -> str:
+    """高齢運転者標章の代わりの菱形。小さく置くので輪郭だけにする。"""
+    return (
+        f'<path d="M50 2 L74 30 L50 58 L26 30 Z" fill="none" stroke="{fill}" '
+        f'stroke-width="9"/>'
+    )
+
+
+# ---- 矢印 ------------------------------------------------------------------
+
+
+def arrow(direction: str = "up", fill: str = WHITE) -> str:
+    """まっすぐな矢印。direction は up/down/left/right。"""
+    body = (
+        f'<path d="M50 2 L74 30 L60 30 L60 58 L40 58 L40 30 L26 30 Z" fill="{fill}"/>'
+    )
+    rot = {"up": 0, "right": 90, "down": 180, "left": 270}[direction]
+    # transform-origin はラスタライザによって解釈が違うので、回転の中心を直接書く
+    return f'<g transform="rotate({rot} 50 30)">{body}</g>'
+
+
+def arrow_turn(side: str = "right", fill: str = WHITE) -> str:
+    """右折・左折の矢印（根元から曲がる）。"""
+    flip = -1 if side == "left" else 1
+    return (
+        f'<g transform="translate(50 0) scale({flip} 1) translate(-50 0)">'
+        f'<path d="M40 58 L40 30 C40 20 48 14 58 14 L64 14 L64 2 L92 22 L64 42 '
+        f'L64 30 L60 30 C58 30 58 32 58 34 L58 58 Z" fill="{fill}"/>'
+        f'</g>'
+    )
+
+
+def arrow_uturn(fill: str = WHITE) -> str:
+    return (
+        f'<path d="M30 58 L30 24 C30 12 40 4 52 4 C64 4 74 12 74 24 L74 34 L86 34 '
+        f'L66 56 L46 34 L58 34 L58 24 C58 20 56 18 52 18 C48 18 46 20 46 24 L46 58 Z" '
+        f'fill="{fill}"/>'
+    )
+
+
+def arrow_ring(fill: str = WHITE) -> str:
+    """環状交差点の右回り。"""
+    return (
+        f'<path d="M50 6 A24 24 0 1 1 26 30" fill="none" stroke="{fill}" stroke-width="8"/>'
+        f'<path d="M14 30 L38 30 L26 48 Z" fill="{fill}"/>'
+    )
+
+
+def arrows_lane(fill: str = WHITE) -> str:
+    """進行方向別通行区分。左折・直進・右折。"""
+    return (
+        f'<g transform="translate(-30 6) scale(0.52)">{arrow_turn("left", fill)}</g>'
+        f'<g transform="translate(0 6) scale(0.52)">{arrow("up", fill)}</g>'
+        f'<g transform="translate(30 6) scale(0.52)">{arrow_turn("right", fill)}</g>'
+    )
+
+
+def arrows_pass(fill: str = WHITE) -> str:
+    """追越し。前の車を追い越す2本の軌跡。"""
+    return (
+        f'<path d="M26 58 L26 14 M16 24 L26 12 L36 24" fill="none" stroke="{fill}" '
+        f'stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>'
+        f'<path d="M74 58 L74 34 C74 22 64 14 52 14" fill="none" stroke="{fill}" '
+        f'stroke-width="8" stroke-linecap="round"/>'
+    )
+
+
+def arrows_two_step(fill: str = WHITE) -> str:
+    """原付の二段階右折。いったん直進して止まり、それから右へ。
+
+    小回り(327の9)と見分けが付くよう、直進の矢印と右向きの矢印を離して置く。
+    """
+    return (
+        f'<path d="M22 58 L22 26 M12 36 L22 24 L32 36" fill="none" stroke="{fill}" '
+        f'stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>'
+        f'<path d="M44 14 L74 14 M64 4 L78 14 L64 24" fill="none" stroke="{fill}" '
+        f'stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>'
+    )
+
+
+# ---- 路面標示 --------------------------------------------------------------
+
+
+def mark_stopline(n: int = 1) -> list[str]:
+    ys = [40] if n == 1 else [30, 46]
+    out = [f'<rect x="9" y="{y}" width="46" height="7" rx="1" fill="{WHITE}"/>' for y in ys]
+    return out + [f'<path d="M32 8 L32 24 M25 17 L32 24 L39 17" stroke="{WHITE}" '
+                  f'stroke-width="4" fill="none" stroke-linecap="round"/>']
+
+
+def mark_line(color: str = WHITE, dashed: bool = False, x: float = 32) -> str:
+    dash = ' stroke-dasharray="7 6"' if dashed else ''
+    return (f'<line x1="{x}" y1="6" x2="{x}" y2="58" stroke="{color}" '
+            f'stroke-width="5"{dash}/>')
+
+
+def mark_lines(xs: list[float], color: str = WHITE, dashed: bool = True) -> list[str]:
+    return [mark_line(color, dashed, x) for x in xs]
+
+
+def mark_shift() -> list[str]:
+    """中央線の変移。折れた線。"""
+    return [f'<path d="M24 6 L24 24 L40 34 L40 58" fill="none" stroke="{YELLOW}" '
+            f'stroke-width="5"/>']
+
+
+def mark_zebra(frame: bool = False) -> list[str]:
+    """導流帯・立入禁止部分の斜縞。frame で外枠を付ける。"""
+    out = []
+    for i in range(-2, 5):
+        x = 8 + i * 11
+        out.append(f'<line x1="{x}" y1="54" x2="{x + 26}" y2="8" stroke="{WHITE}" '
+                   f'stroke-width="4" clip-path="url(#c)"/>')
+    if frame:
+        # 枠は縞の上に重ねる（下に描くと縞に埋もれる）
+        out.append(f'<rect x="9" y="9" width="46" height="46" fill="none" '
+                   f'stroke="{WHITE}" stroke-width="5"/>')
+    return out
+
+
+def mark_box_cross() -> list[str]:
+    """停止禁止部分。白枠に×。"""
+    return [
+        f'<rect x="12" y="12" width="40" height="40" fill="none" stroke="{WHITE}" '
+        f'stroke-width="4"/>',
+        f'<path d="M16 16 L48 48 M48 16 L16 48" stroke="{WHITE}" stroke-width="4"/>',
+    ]
+
+
+def mark_crosswalk(diagonal: bool = False) -> list[str]:
+    """横断歩道の縞。"""
+    out = []
+    for i in range(5):
+        if diagonal:
+            x = 6 + i * 12
+            out.append(f'<path d="M{x} 54 L{x + 16} 10 L{x + 22} 10 L{x + 6} 54 Z" '
+                       f'fill="{WHITE}"/>')
+        else:
+            x = 8 + i * 11
+            out.append(f'<rect x="{x}" y="10" width="7" height="44" fill="{WHITE}"/>')
+    return out
+
+
+def mark_arrows_lane(n: int = 3) -> list[str]:
+    """路面の進行方向別通行区分。矢印を 64 の座標系で直接描く（縮小すると潰れる）。"""
+    def a(x: float, kind: str) -> str:
+        if kind == "up":
+            return (f'<path d="M{x} 50 L{x} 22 M{x - 7} 30 L{x} 20 L{x + 7} 30" '
+                    f'fill="none" stroke="{WHITE}" stroke-width="4.5" '
+                    f'stroke-linecap="round" stroke-linejoin="round"/>')
+        d = -1 if kind == "left" else 1
+        return (f'<path d="M{x} 50 L{x} 32 L{x + 9 * d} 32 M{x + 3 * d} 25 '
+                f'L{x + 11 * d} 32 L{x + 3 * d} 39" fill="none" stroke="{WHITE}" '
+                f'stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>')
+    if n == 1:
+        return [a(32, "up")]
+    return [a(15, "left"), a(32, "up"), a(49, "right")]
+
+
+def mark_roadside() -> list[str]:
+    """路側帯。端に寄せた2本の白線。"""
+    return [
+        f'<line x1="16" y1="6" x2="16" y2="58" stroke="{WHITE}" stroke-width="5"/>',
+        f'<line x1="24" y1="6" x2="24" y2="58" stroke="{WHITE}" stroke-width="4"/>',
+    ]
+
+
+def mark_parking_bay() -> list[str]:
+    """駐車方法の指定。駐車枠。"""
+    return [
+        f'<path d="M12 14 L52 14 M12 14 L12 50 M52 14 L52 50" fill="none" '
+        f'stroke="{WHITE}" stroke-width="5"/>',
+        f'<path d="M12 50 L52 50" stroke="{WHITE}" stroke-width="5" '
+        f'stroke-dasharray="6 6"/>',
+    ]
+
+
+def mark_platform() -> list[str]:
+    """路面電車停留場。ホーム。"""
+    return [
+        f'<g transform="translate(0 2) scale(0.5)">{picto_tram(WHITE)}</g>',
+        f'<rect x="8" y="46" width="48" height="10" rx="2" fill="{WHITE}"/>',
+    ]
+
+
+# ---- SVG の組み立て --------------------------------------------------------
+
+CLIP = (
+    '<defs><clipPath id="c"><rect x="3" y="3" width="58" height="58" rx="4"/>'
+    '</clipPath></defs>'
+)
+
+
+def svg(parts: list[str], clip: bool = False) -> str:
+    body = "".join(parts)
+    defs = CLIP if clip else ""
+    return (
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{SIZE}" height="{SIZE}" '
+        f'viewBox="0 0 {SIZE} {SIZE}">{defs}{body}</svg>'
+    )
