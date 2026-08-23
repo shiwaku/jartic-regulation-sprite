@@ -18,6 +18,10 @@ https://shiwaku.github.io/jartic-regulation-sprite/sprite      // .json / .png
 https://shiwaku.github.io/jartic-regulation-sprite/sprite@2x   // .json / .png
 ```
 
+アイコンの一覧は [配信サイトのトップページ](https://shiwaku.github.io/jartic-regulation-sprite/)
+で見られます（`tools/gen_site.py` が生成）。個別のアイコンは
+`icons/<コード>.svg`（例 `.../icons/63.svg`）でも取得できます。
+
 ## 使い方
 
 MapLibre のスタイルに**もう1本のスプライトとして**足します。既存のスプライトを

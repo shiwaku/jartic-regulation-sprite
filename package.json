@@ -7,6 +7,7 @@
     "icons": "python tools/gen_icons.py",
     "prebuild": "node -e \"require('fs').mkdirSync('_site',{recursive:true})\"",
     "build": "sprite-one -i ./icons -r1 -r2 ./_site/sprite",
+    "postbuild": "python tools/gen_site.py",
     "docs": "python tools/gen_icon_list.py",
     "verify": "python tools/verify_icons.py",
     "start": "npm run build && npx http-server -c-1 ./_site"
