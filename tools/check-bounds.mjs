@@ -1,4 +1,4 @@
-// 独自作図のアイコンが枠の外へ描いていないかを調べる。
+// 手描きのアイコンが枠の外へ描いていないかを調べる。
 //
 //   node tools/check-bounds.mjs           # はみ出しているものを並べる
 //   node tools/check-bounds.mjs --strict  # 1つでもあれば異常終了する
@@ -10,7 +10,7 @@
 // あわせて **台紙（円・正方形・路面など）の外に出ていないか** も見る。枠の中でも
 // 台紙から飛び出していれば、地図では「絵が台紙からこぼれている」ように見える。
 //
-// 対象は独自作図（viewBox が "0 0 64 64" のもの）だけ。標識令の図案は台紙が
+// 対象は手描き分（viewBox が "0 0 64 64" のもの）だけ。標識令の図案は台紙が
 // 枠いっぱいに描かれているのが正しい形なので、この検査にはかけない。
 
 import fs from 'node:fs'
@@ -107,7 +107,7 @@ async function main() {
     }
   }
 
-  console.log(`独自作図 ${ours.length} 個を調べた / はみ出しているもの ${bad.length}`)
+  console.log(`手描き分 ${ours.length} 個を調べた / はみ出しているもの ${bad.length}`)
   for (const b of bad) {
     const px = (n) => (n / (SCALE * SCALE)).toFixed(1)
     const where = [

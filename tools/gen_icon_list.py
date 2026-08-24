@@ -15,7 +15,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
-from gen_icons import DESIGNS  # noqa: E402
+from gen_icons import BASIS_LABEL, DESIGNS, handdrawn_reasons  # noqa: E402
 from import_signs import refs as sign_refs  # noqa: E402
 
 CODES = ROOT / "data" / "codes.csv"
@@ -45,18 +45,19 @@ def main() -> None:
         "「出所」が標識の図案のものは、**標識令別表第二で定められた図案**を 64×64 に",
         "正規化して使っています（`signs/`）。SVGファイル自体は政府配布ではなく、",
         "Wikimedia Commons の利用者が図案を再現したもの（`PD-Japan-exempt`）です。",
-        "独自作図のものは、別表第六（道路標示）の図を e-Gov で確認して形を決めています。",
-        "「参考」の列がその標示番号です。根拠は",
+        "",
+        "手描き分の出所は3種類に分かれます。",
+        "**道路標示の図にもとづく作図**は、別表第六（道路標示）の実物の図を e-Gov で",
+        "確認して形を決めたもの。**標識の図案にもとづく作図**は、標識令に図案はあるが",
+        "Commons に再現SVGが無いもの。**対応する標識・標示なし（独自）**だけが",
+        "ゼロからの作図です。「参考」の列が根拠の標示・標識番号で、出典は",
         "[`../data/handdrawn_reasons.csv`](../data/handdrawn_reasons.csv)。詳しくは",
         "[design-spec.md](design-spec.md)。",
         "",
     ]
 
     signs = {r["code"]: r for r in sign_refs()}
-    reasons = {}
-    if REASONS.exists():
-        with REASONS.open(encoding="utf-8") as f:
-            reasons = {r["code"]: r for r in csv.DictReader(f)}
+    reasons = handdrawn_reasons() if REASONS.exists() else {}
     valid = [r for r in rows if r["status"] == "valid"]
     cols = ["コード", "交通規制種別", "出所", "参考", "意匠"]
     if counts:
@@ -71,10 +72,8 @@ def main() -> None:
             desc = o["note"] or "標識令別表第二で定められた図案をそのまま使う"
         else:
             rs = reasons.get(code, {})
-            src = "独自作図"
+            src = BASIS_LABEL.get(rs.get("basis_kind"), "作図")
             ref = rs.get("basis") or "－"
-            if rs.get("figure_checked") == "yes":
-                src = "独自作図（実物の図を見て作成）"
             _r, desc, _parts = DESIGNS[code]
             if rs.get("note"):
                 desc = rs["note"]

@@ -38,6 +38,22 @@ from import_signs import import_signs, refs  # noqa: E402
 ROOT = Path(__file__).resolve().parents[1]
 ICONS = ROOT / "icons"
 CODES = ROOT / "data" / "codes.csv"
+REASONS = ROOT / "data" / "handdrawn_reasons.csv"
+
+# 手描き分の出所ラベル。handdrawn_reasons.csv の basis_kind から引く。
+# 「独自作図」と一括りにすると、25コードが別表第六の実物の図を参照している
+# 事実が伝わらないため、根拠の種類で呼び分ける。
+BASIS_LABEL = {
+    "marking": "道路標示の図にもとづく作図",
+    "sign": "標識の図案にもとづく作図",
+    "none": "対応する標識・標示なし（独自）",
+}
+
+
+def handdrawn_reasons() -> dict[str, dict[str, str]]:
+    """handdrawn_reasons.csv を code → 行 の辞書で返す。"""
+    with REASONS.open(encoding="utf-8") as f:
+        return {r["code"]: r for r in csv.DictReader(f)}
 
 
 # ---- 家族ごとの組み立て ----------------------------------------------------
