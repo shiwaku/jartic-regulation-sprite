@@ -19,7 +19,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from icons_lib import (  # noqa: E402
-    BLUE, RED, WHITE, YELLOW,
+    BLUE, RED, ROAD, WHITE, YELLOW,
     arrow, arrow_ring, arrow_turn, arrow_uturn, arrows_lane, arrows_pass,
     arrows_two_step, bar_h, blue_circle, blue_circle_red_ring, blue_pentagon,
     blue_rect, blue_square, centered, cross, disc, mark_box_cross, mark_crosswalk,
@@ -82,6 +82,19 @@ def marking(*parts: str) -> list[str]:
     for p in parts:
         out.extend(p if isinstance(p, list) else [p])
     return out
+
+
+def lane_vehicle(picto: str, dashed: bool = True) -> list[str]:
+    """通行帯の線＋乗り物。
+
+    線は端（x=9・55）に寄せ、乗り物は路面色の下敷きの上に大きく置く。
+    線と乗り物が触れて別の形（Hなど）に見えるのを、下敷きの余白で防ぐ。
+    破線/実線の区別が全高で見えるよう、下敷きは線に届かない幅にする。
+    """
+    return marking(
+        mark_lines([9, 55], dashed=dashed),
+        [f'<rect x="12.5" y="17" width="39" height="30" rx="4" fill="{ROAD}"/>',
+         f'<g transform="translate(14 21.2) scale(0.36)">{picto}</g>'])
 
 
 # ---- コードごとの意匠 ------------------------------------------------------
@@ -191,37 +204,32 @@ DESIGNS: dict[str, tuple[str, str, list[str]]] = {
 
     # ---- 通行帯・中央線 ----
     "15": ("標示205", "路面に白の中央線", marking([mark_line(WHITE, dashed=False)])),
-    "16": ("標示205", "折れた白の中央線（中央線の変移）",
-           marking([f'<path d="M24 6 L24 24 L40 34 L40 58" fill="none" stroke="{WHITE}" '
-                    f'stroke-width="5"/>'])),
+    "16": ("標示205", "折れた白の中央線（中央線の変移）。折れが読めるよう太く・横ずれを大きく",
+           marking([f'<path d="M18 4 L18 22 L46 36 L46 60" fill="none" stroke="{WHITE}" '
+                    f'stroke-width="7"/>'])),
     "17": ("標示102", "中央に黄の実線1本（追越しのための右側部分はみ出し通行禁止）",
            marking([mark_line(YELLOW, dashed=False)])),
     "20": ("路面標示", "路面に白の破線2本（車両通行帯）", marking(mark_lines([22, 42]))),
-    "21": ("路面標示", "通行帯の線と自動車（車両通行区分＝車種で分ける）",
-           marking(mark_lines([16, 48]), [f'<g transform="translate(10 16) scale(0.42)">'
-                                          f'{picto_car()}</g>'])),
-    "24": ("路面標示", "通行帯にバス（路線バス等優先通行帯）",
-           marking(mark_lines([16, 48]), [f'<g transform="translate(14 18) scale(0.34)">'
-                                          f'{picto_bus()}</g>'])),
+    "21": ("路面標示", "通行帯の線と自動車（車両通行区分＝車種で分ける。実物は文字）",
+           lane_vehicle(picto_car(bg=ROAD))),
+    "24": ("路面標示", "破線の通行帯にバス（路線バス等優先通行帯。実物は文字）",
+           lane_vehicle(picto_bus(bg=ROAD))),
     "52": ("標示102の2", "車線境界に黄の実線（進路変更禁止。道路標示に赤は使わない）",
            marking([mark_line(YELLOW, dashed=False, x=22),
                     mark_line(YELLOW, dashed=False, x=42)])),
     "107": ("路面標示", "通行帯の線と自動車と直進の矢印（車両通行帯及び車両通行区分）",
-            marking(mark_lines([16, 48]),
-                    [f'<g transform="translate(11 4) scale(0.3)">{picto_car()}</g>'],
-                    [f'<g transform="translate(0 6) scale(0.85)">'
-                     f'{mark_arrow_fan(("up",))[0]}</g>'])),
-    "110": ("路面標示", "通行帯に自転車（普通自転車専用通行帯）",
-            marking(mark_lines([16, 48]), [f'<g transform="translate(14 18) scale(0.34)">'
-                                           f'{picto_bike()}</g>'])),
-    "111": ("路面標示", "実線の通行帯にバス（専用通行帯。専用は実線で区切る）",
-            marking(mark_lines([16, 48], dashed=False),
-                    [f'<g transform="translate(10 16) scale(0.42)">{picto_bus()}</g>'])),
-    "118": ("路面標示", "通行帯の線と矢印（車両通行帯及び進行方向別通行区分）",
-            marking(mark_lines([22, 42]), mark_arrow_l())),
-    "119": ("路面標示", "白の実線と矢印（通行帯・進行方向別通行区分・進路変更禁止）",
-            marking([mark_line(WHITE, dashed=False, x=22), mark_line(WHITE, dashed=False, x=42)],
-                    mark_arrow_l())),
+            marking(mark_lines([9, 55]),
+                    [f'<rect x="14" y="4" width="36" height="22" rx="4" fill="{ROAD}"/>',
+                     f'<g transform="translate(18 6) scale(0.28)">{picto_car(bg=ROAD)}</g>'],
+                    mark_arrow_fan(("up",)))),
+    "110": ("路面標示", "破線の通行帯に自転車（普通自転車専用通行帯。実物は文字）",
+            lane_vehicle(picto_bike())),
+    "111": ("路面標示", "実線の通行帯にバス（専用通行帯。専用は実線で区切る。実物は文字）",
+            lane_vehicle(picto_bus(bg=ROAD), dashed=False)),
+    "118": ("路面標示", "破線の通行帯と左右のL字矢印（車両通行帯及び進行方向別通行区分）",
+            marking(mark_lines([9, 55]), mark_arrow_l(("left", "right")))),
+    "119": ("路面標示", "実線の通行帯と左右のL字矢印（通行帯・進行方向別通行区分・進路変更禁止）",
+            marking(mark_lines([9, 55], dashed=False), mark_arrow_l(("left", "right")))),
 
     # ---- 自転車・歩行者 ----
     "81": ("325の3", "青の円に自転車と歩道の線（普通自転車歩道通行可）",
@@ -230,7 +238,7 @@ DESIGNS: dict[str, tuple[str, str, list[str]]] = {
                             f'stroke-width="3"/>']),
     "82": ("路面標示", "路面に自転車と区分線（普通自転車の歩道通行部分）",
            marking([mark_line(WHITE, dashed=False, x=44)],
-                   [f'<g transform="translate(2 20) scale(0.3)">{picto_bike()}</g>'])),
+                   [f'<g transform="translate(4 20) scale(0.3)">{picto_bike()}</g>'])),
     "83": ("標示114の4", "自転車と進入を塞ぐ横棒（普通自転車の交差点進入禁止）",
            marking(mark_bike_entry_bar())),
     "84": ("401", "青の四角に自転車2台（並進可）",

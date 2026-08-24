@@ -133,13 +133,17 @@ def centered(body: str, scale: float = 0.34, dy: float = 0) -> str:
 # ---- 乗り物・人（100×60 の箱で描く） --------------------------------------
 
 
-def picto_car(fill: str = WHITE) -> str:
-    return (
-        f'<path d="M8 44 L16 26 C18 21 23 18 30 18 L62 18 C70 18 77 22 84 30 '
-        f'L92 39 L92 44 Z" fill="{fill}"/>'
-        f'<circle cx="28" cy="46" r="8" fill="{fill}"/>'
-        f'<circle cx="74" cy="46" r="8" fill="{fill}"/>'
+def picto_car(fill: str = WHITE, bg: str | None = None) -> str:
+    """乗用車の側面。bg を渡すと窓を抜いて、小さくてもキャビンの段が読めるようにする。"""
+    out = (
+        f'<path d="M4 46 L6 34 C7 30 10 28 14 28 L26 28 L38 12 C40 9 43 8 47 8 L64 8 '
+        f'C68 8 71 10 73 13 L82 28 L90 28 C93 28 95 30 96 34 L96 46 Z" fill="{fill}"/>'
+        f'<circle cx="26" cy="48" r="9" fill="{fill}"/>'
+        f'<circle cx="76" cy="48" r="9" fill="{fill}"/>'
     )
+    if bg:
+        out += f'<path d="M44 14 L62 14 C64 14 66 15 67 17 L72 26 L40 26 Z" fill="{bg}"/>'
+    return out
 
 
 def picto_truck(fill: str = WHITE) -> str:
@@ -151,12 +155,21 @@ def picto_truck(fill: str = WHITE) -> str:
     )
 
 
-def picto_bus(fill: str = WHITE) -> str:
-    return (
-        f'<path d="M6 16 L94 16 L94 44 L6 44 Z" fill="{fill}"/>'
-        f'<circle cx="26" cy="46" r="8" fill="{fill}"/>'
-        f'<circle cx="74" cy="46" r="8" fill="{fill}"/>'
+def picto_bus(fill: str = WHITE, bg: str | None = None) -> str:
+    """バスの側面。bg を渡すと窓の列を抜いて、ただの長方形（棒）に見えないようにする。"""
+    out = (
+        f'<rect x="4" y="8" width="92" height="38" rx="5" fill="{fill}"/>'
+        f'<circle cx="24" cy="50" r="9" fill="{fill}"/>'
+        f'<circle cx="76" cy="50" r="9" fill="{fill}"/>'
     )
+    if bg:
+        out += (
+            f'<rect x="12" y="15" width="16" height="12" rx="2" fill="{bg}"/>'
+            f'<rect x="34" y="15" width="16" height="12" rx="2" fill="{bg}"/>'
+            f'<rect x="56" y="15" width="16" height="12" rx="2" fill="{bg}"/>'
+            f'<rect x="78" y="15" width="11" height="12" rx="2" fill="{bg}"/>'
+        )
+    return out
 
 
 def picto_moto(fill: str = WHITE) -> str:
@@ -170,12 +183,15 @@ def picto_moto(fill: str = WHITE) -> str:
 
 
 def picto_bike(fill: str = WHITE) -> str:
+    """自転車の側面。小さくても「輪が2つ」で読めるよう、車輪を太いリングにする。"""
     return (
-        f'<circle cx="20" cy="42" r="14" fill="none" stroke="{fill}" stroke-width="5"/>'
-        f'<circle cx="80" cy="42" r="14" fill="none" stroke="{fill}" stroke-width="5"/>'
-        f'<path d="M20 42 L44 42 L58 20 L80 42" fill="none" stroke="{fill}" '
-        f'stroke-width="5" stroke-linejoin="round"/>'
-        f'<path d="M44 42 L58 20 L74 20" fill="none" stroke="{fill}" stroke-width="5"/>'
+        f'<circle cx="21" cy="40" r="15" fill="none" stroke="{fill}" stroke-width="7"/>'
+        f'<circle cx="79" cy="40" r="15" fill="none" stroke="{fill}" stroke-width="7"/>'
+        f'<path d="M21 40 L40 14 L64 14 L79 40" fill="none" stroke="{fill}" '
+        f'stroke-width="7" stroke-linejoin="round"/>'
+        f'<path d="M40 14 L52 40" fill="none" stroke="{fill}" stroke-width="6"/>'
+        f'<path d="M32 8 L46 8 M64 14 L70 4" fill="none" stroke="{fill}" '
+        f'stroke-width="5" stroke-linecap="round"/>'
     )
 
 
@@ -542,8 +558,9 @@ def mark_arrow_l(dirs: tuple[str, ...] = ("left", "up", "right")) -> list[str]:
             )
         return out
 
+    # 2本組は通行帯の線（x=9・55 に置く）とかえしが重ならない位置にする
     lay = {("up",): [(32, 0)],
-           ("left", "right"): [(22, -1), (42, 1)],
+           ("left", "right"): [(26, -1), (38, 1)],
            ("left", "up", "right"): [(18, -1), (32, 0), (46, 1)]}.get(tuple(dirs))
     if lay is None:
         raise ValueError(f"未対応の組み合わせ: {dirs}")
